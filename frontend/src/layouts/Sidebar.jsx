@@ -33,7 +33,7 @@ export default function Sidebar({ width, mobileOpen, onClose, isDesktop }) {
     >
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
         <Box component="img" src="/nirmaan-logo.png" alt="Nirmaan Logo" sx={{ height: 32, p: 0.5, borderRadius: 1 }} />
-        <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
+        <Typography variant="subtitle1" sx={{ ml: 'auto', fontWeight: 800, lineHeight: 1.2, textAlign: 'right' }}>
           MeetSpace
         </Typography>
       </Box>

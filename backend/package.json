@@ -1,7 +1,7 @@
 {
-  "name": "analytics-dashboard-backend",
+  "name": "meetspace.nirmaan-backend",
   "version": "1.0.0",
-  "description": "Website Analytics & Performance Tracking Portal - Backend API",
+  "description": "Meetspace.Nirmaan Meeting Room Management API",
   "main": "src/server.js",
   "type": "module",
   "scripts": {
@@ -13,8 +13,8 @@
     "clear": "node src/seeders/clear.js"
   },
   "keywords": [
-    "analytics",
-    "dashboard",
+    "meetspace",
+    "meeting-room",
     "express",
     "sequelize",
     "mysql",
