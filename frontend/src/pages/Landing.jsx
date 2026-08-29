@@ -101,7 +101,7 @@ export default function Landing() {
                   onClick={openMeetSpace}
                   sx={{ py: 1.5, px: 3, fontWeight: 700, fontSize: '1.05rem' }}
                 >
-                  1. MeetSpace Portal
+                  MeetSpace
                 </Button>
                 <Button
                   size="large"
@@ -119,7 +119,7 @@ export default function Landing() {
                   endIcon={<ArrowForwardIcon />}
                   onClick={openAttendance}
                 >
-                  2. Attendance Portal
+                  Attendance
                 </Button>
               </Stack>
             </Grid>
