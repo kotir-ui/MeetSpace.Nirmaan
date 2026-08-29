@@ -31,8 +31,8 @@ export default function Landing() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const openMeetSpace = () => navigate(user ? '/meeting-room' : '/login');
-  const openAttendance = () => navigate(user ? '/attendance' : '/login');
+  const openMeetSpace = () => navigate(user ? '/meeting-room' : '/login?module=meetspace');
+  const openAttendance = () => navigate(user ? '/attendance' : '/login?module=attendance');
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -44,9 +44,6 @@ export default function Landing() {
       >
         <Toolbar sx={{ gap: 2 }}>
           <Box component="img" src="/nirmaan-logo.png" alt="Nirmaan Logo" sx={{ height: 36 }} />
-          <Typography variant="h6" sx={{ color: DARK_BLUE, fontWeight: 700, display: { xs: 'none', sm: 'block' } }}>
-            MeetSpace Portal
-          </Typography>
           <Box sx={{ flexGrow: 1 }} />
           <Stack direction="row" spacing={1.5}>
             <Button
@@ -76,14 +73,14 @@ export default function Landing() {
         sx={{
           background: `linear-gradient(135deg, ${DARK_BLUE} 0%, #123B63 100%)`,
           color: '#fff',
-          py: { xs: 8, md: 12 },
+          py: { xs: 8, md: 10 },
         }}
       >
         <Container maxWidth="lg">
           <Grid container spacing={4} alignItems="center">
-            <Grid item xs={12} md={8}>
+            <Grid item xs={12} md={7}>
               <Chip label="Nirmaan Organization" sx={{ bgcolor: 'rgba(255,255,255,0.15)', color: '#fff', mb: 2 }} />
-              <Typography variant="h2" sx={{ fontWeight: 800, lineHeight: 1.1, fontSize: { xs: 34, md: 50 } }}>
+              <Typography variant="h2" sx={{ fontWeight: 800, lineHeight: 1.1, fontSize: { xs: 32, md: 46 } }}>
                 Smart Meeting Room Booking & Attendance Management
               </Typography>
               <Typography variant="h6" sx={{ mt: 2, color: 'rgba(255,255,255,0.8)', fontWeight: 400 }}>
@@ -122,6 +119,35 @@ export default function Landing() {
                   Attendance
                 </Button>
               </Stack>
+            </Grid>
+
+            <Grid item xs={12} md={5} sx={{ display: 'flex', justifyContent: 'center' }}>
+              <Box
+                sx={{
+                  bgcolor: '#fff',
+                  borderRadius: 4,
+                  p: 2,
+                  boxShadow: '0 12px 32px rgba(0,0,0,0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  maxWidth: 380,
+                  width: '100%',
+                }}
+              >
+                <Box
+                  component="img"
+                  src="/meeting-illustration.png"
+                  alt="Meeting Collaboration"
+                  sx={{
+                    width: '100%',
+                    height: 'auto',
+                    maxHeight: 320,
+                    objectFit: 'contain',
+                    borderRadius: 2,
+                  }}
+                />
+              </Box>
             </Grid>
           </Grid>
         </Container>

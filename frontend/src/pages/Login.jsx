@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Box,
   Card,
@@ -21,6 +21,18 @@ import ForgotPasswordDialog from '../components/ForgotPasswordDialog.jsx';
 
 export default function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const moduleParam = searchParams.get('module');
+
+  const portalTitle =
+    moduleParam === 'attendance'
+      ? 'Attendance Portal'
+      : moduleParam === 'meetspace'
+      ? 'MeetSpace Portal'
+      : 'Portal Login';
+
+  const destination = moduleParam === 'attendance' ? '/attendance' : '/meeting-room';
+
   const { login, user } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,7 +47,7 @@ export default function Login() {
   }, []);
 
   if (user) {
-    navigate('/dashboard', { replace: true });
+    navigate(destination, { replace: true });
   }
 
   const handleSubmit = async (e) => {
@@ -44,7 +56,7 @@ export default function Login() {
     setLoading(true);
     try {
       await login(email, password);
-      navigate('/dashboard', { replace: true });
+      navigate(destination, { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
     } finally {
@@ -73,7 +85,7 @@ export default function Login() {
               sx={{ width: '75%', maxWidth: 240, height: 'auto', mx: 'auto', display: 'block' }}
             />
             <Typography variant="h6" sx={{ mt: 1.5, fontWeight: 700 }}>
-              MeetSpace Portal
+              {portalTitle}
             </Typography>
           </Box>
 

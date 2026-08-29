@@ -86,9 +86,6 @@ export default function Header({ onMenuClick }) {
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Box component="img" src="/nirmaan-logo.png" alt="Nirmaan Logo" sx={{ height: 32 }} />
-          <Typography variant="h6" sx={{ fontWeight: 700, display: { xs: 'none', md: 'block' } }}>
-            MeetSpace Portal
-          </Typography>
         </Box>
 
         <Box sx={{ flexGrow: 1 }} />
