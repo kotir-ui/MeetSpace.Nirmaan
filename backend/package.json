@@ -1,0 +1,42 @@
+{
+  "name": "analytics-dashboard-backend",
+  "version": "1.0.0",
+  "description": "Website Analytics & Performance Tracking Portal - Backend API",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "seed": "node src/seeders/seed.js",
+    "seed:platform": "node src/seeders/seedPlatform.js",
+    "seed:periods": "node src/seeders/seedPeriodValues.js",
+    "clear": "node src/seeders/clear.js"
+  },
+  "keywords": [
+    "analytics",
+    "dashboard",
+    "express",
+    "sequelize",
+    "mysql",
+    "jwt"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "mysql2": "^3.11.0",
+    "pdfkit": "^0.15.0",
+    "sequelize": "^6.37.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}
