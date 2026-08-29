@@ -1,4 +1,4 @@
-import { NavLink, Link } from 'react-router-dom';
+import { NavLink, Link, useLocation } from 'react-router-dom';
 import {
   Drawer,
   Box,
@@ -25,6 +25,9 @@ import { useAuth } from '../context/AuthContext.jsx';
 
 export default function Sidebar({ width, mobileOpen, onClose, isDesktop }) {
   const { user } = useAuth();
+  const location = useLocation();
+  const isAttendance = location.pathname.startsWith('/attendance');
+  const moduleTitle = isAttendance ? 'Attendance' : 'MeetSpace';
 
   const content = (
     <Box
@@ -39,7 +42,7 @@ export default function Sidebar({ width, mobileOpen, onClose, isDesktop }) {
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
         <Box component="img" src="/nirmaan-logo.png" alt="Nirmaan Logo" sx={{ height: 32, bgcolor: '#fff', p: 0.5, borderRadius: 1 }} />
         <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
-          MeetSpace & Attendance
+          {moduleTitle}
         </Typography>
       </Box>
 

@@ -39,8 +39,6 @@ export default function Header({ onMenuClick }) {
   const [settings, setSettings] = useState({});
   const [notifications, setNotifications] = useState([]);
   const [unread, setUnread] = useState(0);
-  const navigate = useNavigate();
-  const location = useLocation();
 
   const loadNotifications = () =>
     api

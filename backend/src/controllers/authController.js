@@ -38,11 +38,6 @@ export const login = async (req, res, next) => {
     const token = signToken(user);
     await logActivity(req, 'LOGIN', 'auth', `User ${user.email} logged in`);
 
-    const assignedWebsites = await user.getAssignedWebsites({
-      attributes: ['id', 'name'],
-      joinTableAttributes: [],
-    });
-
     res.json({
       token,
       user: {
@@ -50,8 +45,9 @@ export const login = async (req, res, next) => {
         name: user.name,
         email: user.email,
         role: user.role?.name,
+        department: user.department,
+        department_id: user.department_id,
         status: user.status,
-        assigned_websites: assignedWebsites.map((w) => ({ id: w.id, name: w.name })),
       },
     });
   } catch (err) {
@@ -87,17 +83,14 @@ export const register = async (req, res, next) => {
 };
 
 export const me = async (req, res) => {
-  const assignedWebsites = await req.user.getAssignedWebsites({
-    attributes: ['id', 'name'],
-    joinTableAttributes: [],
-  });
   res.json({
     id: req.user.id,
     name: req.user.name,
     email: req.user.email,
     role: req.user.role?.name,
+    department: req.user.department,
+    department_id: req.user.department_id,
     status: req.user.status,
-    assigned_websites: assignedWebsites.map((w) => ({ id: w.id, name: w.name })),
   });
 };
 

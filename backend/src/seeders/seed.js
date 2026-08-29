@@ -24,7 +24,9 @@ const ensureDatabase = async () => {
 const seed = async () => {
   await ensureDatabase();
   await sequelize.authenticate();
+  await sequelize.query('SET FOREIGN_KEY_CHECKS = 0;');
   await sequelize.sync({ force: true });
+  await sequelize.query('SET FOREIGN_KEY_CHECKS = 1;');
   console.log('✅ Tables re-created');
 
   // Roles

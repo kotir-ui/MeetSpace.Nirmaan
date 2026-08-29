@@ -28,6 +28,10 @@ const User = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+    department_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
     department: {
       type: DataTypes.STRING(120),
       allowNull: true,
