@@ -1,70 +1,478 @@
-# Nirmaan Website Analytics Dashboard
+# Meetspace.Nirmaan — Office Meeting Room Management Portal
 
-**Portal:** analytics.nirmaan.org
+**Portal:** `meetspace.nirmaan.org`
 
-An enterprise-grade full-stack MIS dashboard to monitor, compare and analyze the
-performance of all Nirmaan websites in one place. Built with **React (Vite) + MUI + ApexCharts**
-on the frontend and **Node.js + Express + Sequelize + MySQL** on the backend, secured with
-**JWT** and **role-based access control**.
+An enterprise-grade full-stack **Office Meeting Room Management System** for Nirmaan Organization. The portal is designed to manage meeting rooms, room availability, bookings, meeting schedules, approvals, departments, notifications, and room utilization from one centralized platform.
 
-![Theme](https://img.shields.io/badge/primary-%230A2947-0A2947) ![Accent](https://img.shields.io/badge/accent-%232563EB-2563EB)
+The system should be built with **React (Vite) + MUI** on the frontend and **Node.js + Express + Sequelize + MySQL** on the backend, secured with **JWT authentication** and **role-based access control**.
 
 ---
 
-## ✨ Features
+## ✨ Core Features
 
-- 🔐 JWT authentication with **Super Admin / Admin / Manager / Viewer** roles
-- 🌐 Website master with **Department** grouping (full CRUD)
-- 📊 16 animated KPI cards (visitors, page views, sessions, bounce rate, growth %, best/lowest site…)
-- 📈 Interactive charts — area, bar, horizontal bar, stacked bar, line, pie/donut, **heat map**, ranking
-- 📅 Reports: **Daily · Half-Month (1–15 / 16–End) · Monthly · Quarterly · Yearly**
-- 🗓️ **Fiscal-year quarters** (Q1 Apr–Jun, Q2 Jul–Sep, Q3 Oct–Dec, Q4 Jan–Mar)
-- 📤 Export any report to **Excel · CSV · PDF**
-- 🔎 Search, sorting, pagination & filters (category, department, status, date range) on all tables
-- 🌗 Dark / Light mode
-- 📱 Fully responsive sidebar layout
-- 🧾 Activity logs / audit trail + **Recent Activity** feed
-- 👥 User management
+### 🔐 Authentication & Roles
 
----
+Implement secure JWT-based authentication with role-based permissions:
 
-## 🧱 Tech Stack
+* Super Admin
+* Admin
+* Department Head / Manager
+* Employee / User
+* Viewer
 
-| Layer     | Technology                                             |
-| --------- | ------------------------------------------------------ |
-| Frontend  | React 18, Vite, Material UI, MUI X DataGrid, ApexCharts |
-| Backend   | Node.js, Express, Sequelize ORM                         |
-| Database  | MySQL (XAMPP)                                           |
-| Auth      | JWT + bcrypt                                            |
-| Exports   | ExcelJS, PDFKit                                         |
+Users should only see and perform actions allowed for their role.
 
 ---
 
-## 📁 Project Structure
+## 🏢 Meeting Room Management
 
-```
-Website dashboard/
+Create a complete **Meeting Room Master**.
+
+Each room should support:
+
+* Room Name
+* Room Code
+* Building
+* Floor
+* Location
+* Seating Capacity
+* Room Type
+* Available Facilities
+
+  * Projector
+  * TV / Display
+  * Video Conferencing
+  * Whiteboard
+  * AC
+  * Wi-Fi
+  * Speaker / Microphone
+* Room Status
+
+  * Available
+  * Under Maintenance
+  * Inactive
+* Room Image
+* Description
+
+Admin should be able to:
+
+* Add room
+* Edit room
+* View room
+* Activate / deactivate room
+* Mark room under maintenance
+* Delete room where permitted
+
+---
+
+## 📅 Meeting Room Booking
+
+The main purpose of the portal is to book meeting rooms.
+
+Booking flow:
+
+**Select Date → Select Time → Select Duration → Select Capacity → Select Building/Floor → Show Available Rooms → Select Room → Enter Meeting Details → Submit Booking**
+
+Meeting details:
+
+* Meeting Title
+* Meeting Date
+* Start Time
+* End Time / Duration
+* Meeting Room
+* Organizer / User Name
+* Department
+* Manager / Department Head
+* Number of Participants
+* Participant Names
+* Meeting Purpose
+* Required Facilities
+* Additional Notes
+
+The system must automatically check room availability and prevent double booking.
+
+---
+
+## 🔎 Available Room Search
+
+After selecting:
+
+* Date
+* Start Time
+* End Time
+* Number of Participants
+* Building / Floor
+* Required facilities
+
+show only rooms that match the selected criteria.
+
+Each room card should clearly show:
+
+* Room name
+* Capacity
+* Floor
+* Facilities
+* Current availability
+* Selected time slot
+* Book Room button
+
+If no room is available, display:
+
+**“No meeting rooms are available for the selected time and requirements.”**
+
+---
+
+## 📊 Dashboard
+
+Create a professional office-management dashboard showing:
+
+### KPI Cards
+
+* Total Meeting Rooms
+* Available Rooms
+* Occupied Rooms
+* Today's Meetings
+* Upcoming Meetings
+* Pending Approvals
+* Approved Meetings
+* Cancelled Meetings
+* Room Utilization %
+* Most Used Room
+
+### Dashboard Charts
+
+Include:
+
+* Daily Meeting Trend
+* Weekly Meeting Trend
+* Monthly Meeting Trend
+* Room Utilization
+* Department-wise Meetings
+* Room-wise Booking Count
+* Peak Meeting Hours
+* Meeting Status Distribution
+
+Use interactive charts with ApexCharts.
+
+---
+
+## 📆 Calendar
+
+Create a dedicated **Meeting Calendar**.
+
+Users should be able to view:
+
+* Day
+* Week
+* Month
+
+Calendar events should display:
+
+**Meeting Title | Room | Start Time – End Time | Organizer | Department | Status**
+
+Use different visual indicators for:
+
+* Approved
+* Pending
+* Cancelled
+* Completed
+
+Clicking an event should open the complete meeting details.
+
+---
+
+## 🔔 Approval Workflow
+
+Implement an approval workflow where required.
+
+### Booking Flow
+
+**Employee → Department Head / Manager → HR / Admin → Approved**
+
+Depending on organizational configuration, some meetings may require only Department Head approval or Admin approval.
+
+Booking statuses:
+
+* Draft
+* Pending Department Approval
+* Pending HR/Admin Approval
+* Approved
+* Rejected
+* Cancelled
+* Completed
+
+Approvers should receive notifications when an approval is required.
+
+---
+
+## 🔔 Notifications
+
+Create a centralized notification system.
+
+Notifications should be generated for:
+
+* New booking request
+* Department Head approval required
+* HR/Admin approval required
+* Booking approved
+* Booking rejected
+* Booking cancelled
+* Meeting reminder
+* Room unavailable
+* Room maintenance
+* Booking modification
+
+Header should contain a notification bell with unread count.
+
+---
+
+## 🏢 Department Management
+
+Create a Department Master.
+
+Fields:
+
+* Department Name
+* Department Code
+* Department Head
+* Status
+
+Departments should be associated with users and meeting bookings.
+
+---
+
+## 👥 User Management
+
+Admin should be able to manage:
+
+* Employee Name
+* Employee ID
+* Email
+* Department
+* Designation
+* Manager / Department Head
+* Role
+* Status
+
+Support:
+
+* Add user
+* Edit user
+* Activate / deactivate
+* Role assignment
+* Department assignment
+
+---
+
+## 📋 My Bookings
+
+Each employee should have a **My Bookings** page.
+
+Display:
+
+* Meeting Title
+* Date
+* Time
+* Room
+* Department
+* Status
+* Approval Status
+* Organizer
+
+Actions:
+
+* View
+* Edit where permitted
+* Cancel
+* Reschedule where permitted
+
+---
+
+## 📝 Approval Management
+
+Department Heads and authorized Admin/HR users should have an **Approval Requests** page.
+
+Filters:
+
+* Pending
+* Approved
+* Rejected
+* Date
+* Department
+* Room
+* Organizer
+
+Actions:
+
+* View Details
+* Approve
+* Reject
+* Add Comment
+
+All approval actions must be recorded in the audit log.
+
+---
+
+## 📈 Reports
+
+Provide reports for:
+
+* Daily Meeting Report
+* Weekly Meeting Report
+* Monthly Meeting Report
+* Quarterly Meeting Report
+* Yearly Meeting Report
+* Room Utilization Report
+* Department-wise Booking Report
+* Employee-wise Booking Report
+* Peak Hour Report
+* Cancelled Meeting Report
+
+Reports should support:
+
+* Search
+* Sorting
+* Filtering
+* Pagination
+* Date range
+* Department
+* Room
+* Status
+
+Export:
+
+* Excel
+* CSV
+* PDF
+
+---
+
+## 🗓️ Fiscal Year
+
+Where financial-year reporting is required, use the Nirmaan fiscal year:
+
+* Q1: April – June
+* Q2: July – September
+* Q3: October – December
+* Q4: January – March
+
+---
+
+## 🧾 Activity Logs / Audit Trail
+
+Maintain a complete audit trail for:
+
+* Login
+* Logout
+* Room creation
+* Room update
+* Room deletion
+* Booking creation
+* Booking modification
+* Booking cancellation
+* Approval
+* Rejection
+* User changes
+* Department changes
+
+Record:
+
+* User
+* Action
+* Module
+* Record ID
+* Date & Time
+* IP / relevant system information where appropriate
+
+---
+
+## 🎨 UI / UX
+
+Use a professional **Nirmaan enterprise design**.
+
+Primary style:
+
+* Clean corporate interface
+* Nirmaan branding
+* Responsive MUI layout
+* Desktop-first but fully responsive
+* Light / Dark mode
+* Modern sidebar
+* Header with user profile and notifications
+
+### Sidebar
+
+Use a single **Meeting Room / Meetspace** section instead of creating multiple unrelated room-booking menu items.
+
+Suggested navigation:
+
+* 🏠 Dashboard
+* 📅 Meeting Calendar
+* ➕ Book Meeting Room
+* 📋 My Bookings
+* 🔔 Approval Requests
+* 🏢 Meeting Rooms
+* 👥 Departments
+* 👤 Users
+* 📊 Reports
+* 🧾 Activity Logs
+* ⚙️ Settings
+
+Menu visibility must depend on the user's role.
+
+---
+
+## 🧱 Technology Stack
+
+| Layer          | Technology                                  |
+| -------------- | ------------------------------------------- |
+| Frontend       | React 18, Vite, Material UI, MUI X DataGrid |
+| Charts         | ApexCharts                                  |
+| Backend        | Node.js, Express                            |
+| ORM            | Sequelize                                   |
+| Database       | MySQL                                       |
+| Authentication | JWT + bcrypt                                |
+| Export         | ExcelJS, PDFKit                             |
+| API            | REST API                                    |
+
+---
+
+## 📁 Recommended Project Structure
+
+```text
+Meetspace.Nirmaan/
 ├── backend/
 │   ├── src/
-│   │   ├── config/         # Sequelize DB connection
-│   │   ├── models/         # users, roles, websites, analytics, reports…
-│   │   ├── controllers/    # auth, users, websites, analytics, reports, dashboard, export
-│   │   ├── routes/         # REST API routes
-│   │   ├── middleware/     # JWT auth + RBAC, error handling
-│   │   ├── services/       # analytics aggregation engine
-│   │   ├── utils/          # metrics helpers, activity logger
-│   │   ├── seeders/        # demo data generator
-│   │   ├── app.js          # Express app
-│   │   └── server.js       # entry point
-│   ├── .env                # environment config
+│   │   ├── config/
+│   │   ├── models/
+│   │   ├── controllers/
+│   │   ├── routes/
+│   │   ├── middleware/
+│   │   ├── services/
+│   │   ├── utils/
+│   │   ├── seeders/
+│   │   ├── app.js
+│   │   └── server.js
+│   ├── .env
 │   └── package.json
+│
 └── frontend/
     ├── src/
-    │   ├── api/            # axios client + file downloader
-    │   ├── components/     # KpiCard, ChartCard, ExportButtons, ReportTable…
-    │   ├── context/        # Auth, ColorMode, Filter providers
-    │   ├── layouts/        # DashboardLayout, Sidebar, Header
-    │   ├── pages/          # Dashboard, Websites, Analytics, Users, reports/*
+    │   ├── api/
+    │   ├── components/
+    │   ├── context/
+    │   ├── layouts/
+    │   ├── pages/
+    │   │   ├── Dashboard/
+    │   │   ├── Calendar/
+    │   │   ├── BookRoom/
+    │   │   ├── MyBookings/
+    │   │   ├── Approvals/
+    │   │   ├── Rooms/
+    │   │   ├── Departments/
+    │   │   ├── Users/
+    │   │   ├── Reports/
+    │   │   └── ActivityLogs/
     │   ├── theme.js
     │   └── App.jsx
     └── package.json
@@ -72,118 +480,123 @@ Website dashboard/
 
 ---
 
-## 🚀 Getting Started
+## 🗄️ Database Structure
 
-### 1. Prerequisites
+Use a normalized relational database.
 
-- [Node.js](https://nodejs.org/) 18+
-- **XAMPP** with **MySQL running** (start it from the XAMPP Control Panel)
+Core tables:
 
-### 2. Backend
-
-```powershell
-cd backend
-npm install
-# Adjust backend/.env if your MySQL user/password differ from XAMPP defaults (root / empty)
-npm run seed      # creates the database, tables and 2 years of demo analytics
-npm run dev       # starts API on http://localhost:5000
+```text
+roles
+users
+departments
+meeting_rooms
+room_facilities
+bookings
+booking_participants
+booking_approvals
+notifications
+activity_logs
+room_maintenance
 ```
 
-> `npm run seed` automatically **creates the `analytics_dashboard` database** if it does
-> not exist, so you do not need to create it manually in phpMyAdmin.
+Important relationships:
 
-### 3. Frontend
-
-```powershell
-cd frontend
-npm install
-npm run dev       # starts app on http://localhost:5173
+```text
+Department
+    ↓
+Users
+    ↓
+Bookings
+    ↓
+Meeting Room
+    ↓
+Booking Approvals
+    ↓
+Notifications
 ```
 
-Open **http://localhost:5173** and log in.
+Do not create unnecessary duplicate tables or duplicate modules.
+
+The booking system must use the **same source of truth** for room availability, bookings, approvals, and reports.
 
 ---
 
-## 🔑 Demo Accounts
+## 🔌 REST API
 
-| Role        | Email                     | Password      |
-| ----------- | ------------------------- | ------------- |
-| Super Admin | superadmin@nirmaan.org    | `Super@123`   |
-| Admin       | admin@nirmaan.org         | `Admin@123`   |
-| Manager     | manager@nirmaan.org       | `Manager@123` |
-| Viewer      | viewer@nirmaan.org        | `Viewer@123`  |
+Suggested APIs:
 
----
+```text
+POST   /api/auth/login
+GET    /api/auth/me
 
-## 🔌 REST API Overview
+GET    /api/dashboard/summary
+GET    /api/dashboard/room-utilization
+GET    /api/dashboard/meeting-trend
 
-Base URL: `http://localhost:5000/api`
+GET    /api/rooms
+POST   /api/rooms
+PUT    /api/rooms/:id
+DELETE /api/rooms/:id
+GET    /api/rooms/available
 
-| Method | Endpoint                        | Description                    | Access          |
-| ------ | ------------------------------- | ------------------------------ | --------------- |
-| POST   | `/auth/login`                   | Login, returns JWT             | Public          |
-| GET    | `/auth/me`                      | Current user                   | Authenticated   |
-| GET    | `/dashboard/summary`            | KPI summary                    | Authenticated   |
-| GET    | `/dashboard/performance`        | Website performance table      | Authenticated   |
-| GET    | `/dashboard/monthly-trend`      | Per-website monthly trend      | Authenticated   |
-| GET    | `/websites`                     | List (search/filter/paginate)  | Authenticated   |
-| POST   | `/websites`                     | Create website                 | Admin / Manager |
-| PUT    | `/websites/:id`                 | Update website                 | Admin / Manager |
-| DELETE | `/websites/:id`                 | Delete website                 | Admin           |
-| GET    | `/analytics`                    | Daily analytics records        | Authenticated   |
-| POST   | `/analytics`                    | Upsert daily record            | Admin / Manager |
-| GET    | `/reports/daily`                | Daily report                   | Authenticated   |
-| GET    | `/reports/half-month`           | Half-month report              | Authenticated   |
-| GET    | `/reports/monthly`              | Monthly comparison             | Authenticated   |
-| GET    | `/reports/quarterly`            | Quarterly report               | Authenticated   |
-| GET    | `/reports/yearly`               | Yearly report                  | Authenticated   |
-| GET    | `/export/excel/:type`           | Export report to Excel         | Authenticated   |
-| GET    | `/export/csv/:type`             | Export report to CSV           | Authenticated   |
-| GET    | `/export/pdf/:type`             | Export report to PDF           | Authenticated   |
-| GET    | `/users`                        | List users                     | Admin / Manager |
-| GET    | `/activity-logs`                | Audit trail                    | Admin / Manager |
+GET    /api/bookings
+POST   /api/bookings
+GET    /api/bookings/:id
+PUT    /api/bookings/:id
+DELETE /api/bookings/:id
+POST   /api/bookings/:id/cancel
 
-`:type` for exports = `performance | monthly | halfmonth | quarterly | yearly | daily`
+GET    /api/approvals
+POST   /api/approvals/:id/approve
+POST   /api/approvals/:id/reject
 
----
+GET    /api/calendar
 
-## 🗄️ Database Tables
+GET    /api/departments
+POST   /api/departments
+PUT    /api/departments/:id
+DELETE /api/departments/:id
 
-`roles`, `users`, `websites`, `website_daily_analytics`, `website_monthly_reports`,
-`website_quarterly_reports`, `website_yearly_reports`, `dashboard_summary`, `activity_logs`
+GET    /api/users
+POST   /api/users
+PUT    /api/users/:id
+DELETE /api/users/:id
 
-Monthly / quarterly / yearly figures are computed on-the-fly from
-`website_daily_analytics` by the aggregation engine in
-`backend/src/services/analyticsService.js`, guaranteeing the reports always reflect
-the latest data.
+GET    /api/notifications
+PUT    /api/notifications/:id/read
 
----
+GET    /api/reports/daily
+GET    /api/reports/monthly
+GET    /api/reports/quarterly
+GET    /api/reports/yearly
 
-## 🛠️ Configuration
-
-Edit `backend/.env`:
-
-```env
-PORT=5000
-DB_HOST=localhost
-DB_PORT=3306
-DB_NAME=analytics_dashboard
-DB_USER=root
-DB_PASSWORD=
-JWT_SECRET=change_this_to_a_long_random_secret
-CLIENT_URL=http://localhost:5173
+GET    /api/activity-logs
 ```
 
-The frontend proxies `/api` to `http://localhost:5000` (see `frontend/vite.config.js`).
+---
+
+## ⚠️ Important Business Rules
+
+1. **Never allow double booking of the same room for overlapping times.**
+2. Room capacity must be equal to or greater than the number of participants.
+3. Rooms under maintenance must not appear in available-room search.
+4. Cancelled bookings must release the room slot.
+5. Approval status must be clearly separated from booking status.
+6. Users can only modify/cancel bookings according to their permissions and organizational rules.
+7. Every approval/rejection/change must create an activity-log entry.
+8. Dashboard and reports must calculate data from the actual booking records.
+9. Do not use demo analytics/website data.
+10. Do not include Website Analytics, Website Master, SEO Analytics, Visitors, Page Views, Sessions, Bounce Rate, or other website-analytics functionality.
+11. This project is **exclusively for Nirmaan Office Meeting Room Management**.
+12. Keep the architecture modular so the **Meeting Room module can be separated and moved to another Nirmaan portal in the future without breaking the main application.**
 
 ---
 
-## 📝 Notes
+## 🎯 Project Identity
 
-- Re-running `npm run seed` **drops and recreates** all tables with fresh demo data.
-- Growth percentages compare the selected period against the immediately preceding one.
-- Use the **Month/Year** selectors in the header to change the reporting period globally.
-- **Quarterly & Yearly reports use the fiscal year (April–March).** The header **Year**
-  selector is treated as the fiscal year for those reports (e.g. 2025 = Apr 2025 – Mar 2026).
-- Every report can be exported as **Excel (.xlsx)**, **CSV (.csv)** or **PDF (.pdf)** via the
-  `/export/{excel|csv|pdf}/:type` endpoints.
+**Product Name:** Meetspace.Nirmaan
+**Purpose:** Nirmaan Office Meeting Room Management
+**Domain:** `meetspace.nirmaan.org`
+
+The system should feel like an internal enterprise application for Nirmaan employees and should focus entirely on **meeting rooms, bookings, availability, approvals, notifications, calendars, and room utilization**.

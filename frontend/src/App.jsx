@@ -8,9 +8,7 @@ import DashboardLayout from './layouts/DashboardLayout.jsx';
 import Login from './pages/Login.jsx';
 import Landing from './pages/Landing.jsx';
 import Users from './pages/Users.jsx';
-import AttendanceView from './pages/AttendanceView.jsx';
 import LoadingScreen from './components/LoadingScreen.jsx';
-// Booking System Pages
 import MeetingRoomBooking from './modules/meeting/pages/MeetingRoomBooking.jsx';
 
 export default function App() {
@@ -33,9 +31,12 @@ export default function App() {
             </ProtectedRoute>
           }
         >
-          <Route path="/dashboard" element={<Navigate to="/meeting-room" replace />} />
-          <Route path="/meeting-room" element={<MeetingRoomBooking />} />
-          <Route path="/attendance" element={<AttendanceView />} />
+          <Route path="/dashboard" element={<Navigate to="/meeting-room/dashboard" replace />} />
+          <Route path="/meeting-room" element={<Navigate to="/meeting-room/dashboard" replace />} />
+          <Route path="/meeting-room/dashboard" element={<MeetingRoomBooking view="dashboard" />} />
+          <Route path="/meeting-room/book" element={<MeetingRoomBooking view="book" />} />
+          <Route path="/meeting-room/my-bookings" element={<MeetingRoomBooking view="my-bookings" />} />
+          <Route path="/meeting-room/admin" element={<MeetingRoomBooking view="admin" />} />
           <Route
             path="/users"
             element={

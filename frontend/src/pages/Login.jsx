@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Card,
@@ -21,17 +21,7 @@ import ForgotPasswordDialog from '../components/ForgotPasswordDialog.jsx';
 
 export default function Login() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const moduleParam = searchParams.get('module');
-
-  const portalTitle =
-    moduleParam === 'attendance'
-      ? 'Attendance'
-      : moduleParam === 'meetspace'
-      ? 'MeetSpace'
-      : 'Sign In';
-
-  const destination = moduleParam === 'attendance' ? '/attendance' : '/meeting-room';
+  const destination = '/meeting-room';
 
   const { login, user } = useAuth();
   const [email, setEmail] = useState('');
@@ -84,8 +74,11 @@ export default function Login() {
               alt="Nirmaan.org"
               sx={{ width: '75%', maxWidth: 240, height: 'auto', mx: 'auto', display: 'block' }}
             />
-            <Typography variant="h6" sx={{ mt: 1.5, fontWeight: 700 }}>
-              {portalTitle}
+            <Typography variant="h6" sx={{ mt: 1.5, fontWeight: 700, color: 'text.primary' }}>
+              MeetSpace Portal
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Meeting Room Booking & Management System
             </Typography>
           </Box>
 

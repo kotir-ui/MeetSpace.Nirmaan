@@ -92,23 +92,26 @@ export default function BookingDashboard() {
   const StatCard = ({ title, value, icon: Icon, color }) => (
     <Card
       sx={{
-        height: '100%',
         borderRadius: 1.5,
-        background: `linear-gradient(135deg, ${color}20 0%, ${color}10 100%)`,
-        border: `2px solid ${color}30`,
-        transition: 'all 0.3s ease',
-        minHeight: 132,
+        background: `linear-gradient(135deg, ${color}10 0%, transparent 100%)`,
+        border: `1px solid ${color}30`,
+        transition: 'all 0.2s ease',
+        boxShadow: 'none',
         '&:hover': { transform: 'translateY(-2px)', boxShadow: `0 4px 12px ${color}20` },
       }}
     >
-      <CardContent sx={{ textAlign: 'center', py: 1.25, px: 1.5, '&:last-child': { pb: 1.25 } }}>
-        <Icon sx={{ fontSize: 25, color, mb: 0.25 }} />
-        <Typography variant="h6" sx={{ fontWeight: 700, color, my: 0.25 }}>
-          {value}
-        </Typography>
-        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-          {title}
-        </Typography>
+      <CardContent sx={{ display: 'flex', alignItems: 'center', py: '16px !important', px: 2 }}>
+        <Box sx={{ p: 1, borderRadius: 1.5, bgcolor: `${color}15`, display: 'flex', mr: 2 }}>
+          <Icon sx={{ fontSize: 24, color }} />
+        </Box>
+        <Box>
+          <Typography variant="h6" sx={{ fontWeight: 800, color, lineHeight: 1, mb: 0.25 }}>
+            {value}
+          </Typography>
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            {title}
+          </Typography>
+        </Box>
       </CardContent>
     </Card>
   );

@@ -82,9 +82,7 @@ export default function Header({ onMenuClick }) {
           <MenuIcon />
         </IconButton>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Box component="img" src="/nirmaan-logo.png" alt="Nirmaan Logo" sx={{ height: 32 }} />
-        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }} />
 
         <Box sx={{ flexGrow: 1 }} />
 
