@@ -39,7 +39,7 @@ export default function Sidebar({ width, mobileOpen, onClose, isDesktop }) {
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
         <Box component="img" src="/nirmaan-logo.png" alt="Nirmaan Logo" sx={{ height: 32, bgcolor: '#fff', p: 0.5, borderRadius: 1 }} />
         <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
-          MeetSpace Portal
+          MeetSpace & Attendance
         </Typography>
       </Box>
 
@@ -64,7 +64,7 @@ export default function Sidebar({ width, mobileOpen, onClose, isDesktop }) {
         <Typography variant="overline" sx={{ px: 2, color: 'rgba(255,255,255,0.5)' }}>
           Attendance
         </Typography>
-        <NavItem to="/attendance" icon={<EventIcon />} label="Attendance Portal" onClose={onClose} />
+        <NavItem to="/attendance" icon={<EventIcon />} label="Attendance" onClose={onClose} />
 
         <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)', my: 1 }} />
         <Typography variant="overline" sx={{ px: 2, color: 'rgba(255,255,255,0.5)' }}>

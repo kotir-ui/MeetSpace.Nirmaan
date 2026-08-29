@@ -218,7 +218,7 @@ export default function Landing() {
                   <EventIcon />
                 </Box>
                 <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
-                  Attendance Portal — Employee Tracking
+                  Attendance — Employee Tracking
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1, mb: 3, lineHeight: 1.6 }}>
                   Track real-time employee check-ins and check-outs, monitor daily team presence, view presence stats, and generate/export presence reports.

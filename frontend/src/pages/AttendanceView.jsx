@@ -52,7 +52,7 @@ export default function AttendanceView() {
 
   return (
     <Box>
-      <PageHeader title="Attendance Portal" subtitle="Daily team attendance and presence tracking" />
+      <PageHeader title="Attendance" subtitle="Daily team attendance and presence tracking" />
 
       {error && (
         <Alert severity="info" sx={{ mb: 3 }}>

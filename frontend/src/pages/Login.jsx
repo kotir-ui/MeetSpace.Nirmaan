@@ -26,10 +26,10 @@ export default function Login() {
 
   const portalTitle =
     moduleParam === 'attendance'
-      ? 'Attendance Portal'
+      ? 'Attendance'
       : moduleParam === 'meetspace'
-      ? 'MeetSpace Portal'
-      : 'Portal Login';
+      ? 'MeetSpace'
+      : 'Sign In';
 
   const destination = moduleParam === 'attendance' ? '/attendance' : '/meeting-room';
 
