@@ -33,6 +33,7 @@ export default function App() {
             </ProtectedRoute>
           }
         >
+          <Route path="/dashboard" element={<Navigate to="/meeting-room" replace />} />
           <Route path="/meeting-room" element={<MeetingRoomBooking />} />
           <Route path="/attendance" element={<AttendanceView />} />
           <Route

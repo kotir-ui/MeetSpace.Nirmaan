@@ -72,11 +72,8 @@ export default function Login() {
               alt="Nirmaan.org"
               sx={{ width: '75%', maxWidth: 240, height: 'auto', mx: 'auto', display: 'block' }}
             />
-            <Typography variant="h6" sx={{ mt: 1.5 }}>
-              Analytics Platform
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              analytics.nirmaan.org
+            <Typography variant="h6" sx={{ mt: 1.5, fontWeight: 700 }}>
+              MeetSpace Portal
             </Typography>
           </Box>
 

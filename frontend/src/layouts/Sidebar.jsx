@@ -36,7 +36,12 @@ export default function Sidebar({ width, mobileOpen, onClose, isDesktop }) {
         flexDirection: 'column',
       }}
     >
-
+      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+        <Box component="img" src="/nirmaan-logo.png" alt="Nirmaan Logo" sx={{ height: 32, bgcolor: '#fff', p: 0.5, borderRadius: 1 }} />
+        <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+          MeetSpace Portal
+        </Typography>
+      </Box>
 
       <List
         sx={{

@@ -30,7 +30,9 @@ const FEATURES = [
 export default function Landing() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const goApp = () => navigate(user ? '/meeting-room' : '/login');
+
+  const openMeetSpace = () => navigate(user ? '/meeting-room' : '/login');
+  const openAttendance = () => navigate(user ? '/attendance' : '/login');
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -41,13 +43,31 @@ export default function Landing() {
         sx={{ bgcolor: '#fff', color: DARK_BLUE, borderBottom: '1px solid', borderColor: 'divider' }}
       >
         <Toolbar sx={{ gap: 2 }}>
-          <Typography variant="h6" sx={{ color: DARK_BLUE, fontWeight: 700 }}>
-            MeetSpace & Attendance Portal
+          <Box component="img" src="/nirmaan-logo.png" alt="Nirmaan Logo" sx={{ height: 36 }} />
+          <Typography variant="h6" sx={{ color: DARK_BLUE, fontWeight: 700, display: { xs: 'none', sm: 'block' } }}>
+            MeetSpace Portal
           </Typography>
           <Box sx={{ flexGrow: 1 }} />
-          <Button variant="contained" color="primary" onClick={goApp}>
-            {user ? 'Open Portal' : 'Sign In'}
-          </Button>
+          <Stack direction="row" spacing={1.5}>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<MeetingRoomIcon />}
+              onClick={openMeetSpace}
+              sx={{ fontWeight: 600 }}
+            >
+              MeetSpace
+            </Button>
+            <Button
+              variant="outlined"
+              color="primary"
+              startIcon={<EventIcon />}
+              onClick={openAttendance}
+              sx={{ fontWeight: 600 }}
+            >
+              Attendance
+            </Button>
+          </Stack>
         </Toolbar>
       </AppBar>
 
@@ -61,17 +81,45 @@ export default function Landing() {
       >
         <Container maxWidth="lg">
           <Grid container spacing={4} alignItems="center">
-            <Grid item xs={12} md={7}>
+            <Grid item xs={12} md={8}>
               <Chip label="Nirmaan Organization" sx={{ bgcolor: 'rgba(255,255,255,0.15)', color: '#fff', mb: 2 }} />
-              <Typography variant="h2" sx={{ fontWeight: 800, lineHeight: 1.1, fontSize: { xs: 34, md: 52 } }}>
+              <Typography variant="h2" sx={{ fontWeight: 800, lineHeight: 1.1, fontSize: { xs: 34, md: 50 } }}>
                 Smart Meeting Room Booking & Attendance Management
               </Typography>
               <Typography variant="h6" sx={{ mt: 2, color: 'rgba(255,255,255,0.8)', fontWeight: 400 }}>
-                Streamline meeting room reservations, approval workflows, and employee attendance tracking in one unified modular platform.
+                Select a service below to access room reservations, approval workflows, or daily employee attendance tracking.
               </Typography>
-              <Stack direction="row" spacing={2} sx={{ mt: 4 }}>
-                <Button size="large" variant="contained" color="secondary" endIcon={<ArrowForwardIcon />} onClick={goApp}>
-                  {user ? 'Go to MeetSpace' : 'Get Started'}
+
+              {/* 2 Main Buttons */}
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mt: 4 }}>
+                <Button
+                  size="large"
+                  variant="contained"
+                  color="secondary"
+                  startIcon={<MeetingRoomIcon />}
+                  endIcon={<ArrowForwardIcon />}
+                  onClick={openMeetSpace}
+                  sx={{ py: 1.5, px: 3, fontWeight: 700, fontSize: '1.05rem' }}
+                >
+                  1. MeetSpace Portal
+                </Button>
+                <Button
+                  size="large"
+                  variant="contained"
+                  sx={{
+                    py: 1.5,
+                    px: 3,
+                    fontWeight: 700,
+                    fontSize: '1.05rem',
+                    bgcolor: '#10B981',
+                    color: '#fff',
+                    '&:hover': { bgcolor: '#059669' },
+                  }}
+                  startIcon={<EventIcon />}
+                  endIcon={<ArrowForwardIcon />}
+                  onClick={openAttendance}
+                >
+                  2. Attendance Portal
                 </Button>
               </Stack>
             </Grid>
@@ -79,27 +127,96 @@ export default function Landing() {
         </Container>
       </Box>
 
-      {/* Features */}
-      <Container maxWidth="lg" sx={{ py: 8 }} id="features">
-        <Typography variant="h4" sx={{ fontWeight: 700, textAlign: 'center', mb: 6 }}>
-          Core Modules
+      {/* Core Services */}
+      <Container maxWidth="lg" sx={{ py: 8 }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, textAlign: 'center', mb: 1 }}>
+          Select Service
         </Typography>
-        <Grid container spacing={3}>
-          {FEATURES.map((f, i) => (
-            <Grid item xs={12} sm={6} key={i}>
-              <Card elevation={0} sx={{ height: '100%', border: '1px solid', borderColor: 'divider' }}>
-                <CardContent>
-                  <Box sx={{ color: 'primary.main', mb: 1, '& svg': { fontSize: 36 } }}>{f.icon}</Box>
-                  <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-                    {f.title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {f.desc}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
+        <Typography variant="body1" color="text.secondary" textAlign="center" sx={{ mb: 6 }}>
+          Click on any service to view details and launch the module
+        </Typography>
+
+        <Grid container spacing={4}>
+          <Grid item xs={12} md={6}>
+            <Card
+              elevation={0}
+              sx={{
+                height: '100%',
+                border: '2px solid',
+                borderColor: 'primary.main',
+                borderRadius: 3,
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                '&:hover': { transform: 'translateY(-4px)', boxShadow: 4 },
+              }}
+            >
+              <CardContent sx={{ p: 4, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <Box sx={{ color: 'primary.main', mb: 2, '& svg': { fontSize: 48 } }}>
+                  <MeetingRoomIcon />
+                </Box>
+                <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
+                  MeetSpace — Meeting Room Booking
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1, mb: 3, lineHeight: 1.6 }}>
+                  Reserve conference rooms, manage equipment & facilities, view interactive room calendar availability, and handle multi-stage Department Head & HR approval workflows.
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="large"
+                  startIcon={<MeetingRoomIcon />}
+                  endIcon={<ArrowForwardIcon />}
+                  onClick={openMeetSpace}
+                  fullWidth
+                  sx={{ py: 1.2, fontWeight: 700 }}
+                >
+                  Open MeetSpace Details
+                </Button>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <Card
+              elevation={0}
+              sx={{
+                height: '100%',
+                border: '2px solid',
+                borderColor: '#10B981',
+                borderRadius: 3,
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                '&:hover': { transform: 'translateY(-4px)', boxShadow: 4 },
+              }}
+            >
+              <CardContent sx={{ p: 4, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <Box sx={{ color: '#10B981', mb: 2, '& svg': { fontSize: 48 } }}>
+                  <EventIcon />
+                </Box>
+                <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
+                  Attendance Portal — Employee Tracking
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1, mb: 3, lineHeight: 1.6 }}>
+                  Track real-time employee check-ins and check-outs, monitor daily team presence, view presence stats, and generate/export presence reports.
+                </Typography>
+                <Button
+                  variant="contained"
+                  size="large"
+                  startIcon={<EventIcon />}
+                  endIcon={<ArrowForwardIcon />}
+                  onClick={openAttendance}
+                  fullWidth
+                  sx={{
+                    py: 1.2,
+                    fontWeight: 700,
+                    bgcolor: '#10B981',
+                    color: '#fff',
+                    '&:hover': { bgcolor: '#059669' },
+                  }}
+                >
+                  Open Attendance Details
+                </Button>
+              </CardContent>
+            </Card>
+          </Grid>
         </Grid>
       </Container>
     </Box>

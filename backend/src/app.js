@@ -33,7 +33,7 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 app.get('/', (req, res) => {
-  res.json({ name: 'Website Analytics Dashboard API', version: '1.0.0' });
+  res.json({ name: 'MeetSpace Portal API', version: '1.0.0' });
 });
 
 app.use('/api', routes);
