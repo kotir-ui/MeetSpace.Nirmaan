@@ -1,11 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
-  Grid, Card, CardContent, Typography, CircularProgress, Button, Chip, Paper, ToggleButton, ToggleButtonGroup, Stack,
+  Grid, Card, CardContent, Typography, CircularProgress, Chip, Paper, Stack, TextField, Tooltip,
 } from '@mui/material';
 import {
   MeetingRoom as MeetingRoomIcon, CheckCircle as CheckCircleIcon, EventNote as EventNoteIcon, Pending as PendingIcon,
-  Add as AddIcon, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import * as bookingApi from '../../api/booking.js';
@@ -18,8 +17,6 @@ export default function BookingDashboard() {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [todayBookings, setTodayBookings] = useState([]);
-  const [showFilter, setShowFilter] = useState('active');
-  const orientation = 'vertical';
   const [selectedDate, setSelectedDate] = useState(new Date());
   const dateString = selectedDate.toISOString().split('T')[0];
 
@@ -31,11 +28,11 @@ export default function BookingDashboard() {
       const [summaryResponse, bookingsResponse, roomsResponse] = await Promise.all([
         bookingApi.getDashboardSummary(),
         bookingApi.getBookings({ dateFrom: dateString, dateTo: dateString }),
-        bookingApi.getRooms({ status: 'active' }),
+        bookingApi.getRooms(),
       ]);
       setDashboard(summaryResponse.data?.data);
       setTodayBookings(bookingsResponse.data?.data || []);
-      setRooms((roomsResponse.data?.data || []).filter((room) => room.room_status === 'active'));
+      setRooms(roomsResponse.data?.data || []);
     } catch (error) {
       console.error('Error fetching dashboard:', error);
     } finally {
@@ -43,41 +40,25 @@ export default function BookingDashboard() {
     }
   };
 
-  const filteredBookings = useMemo(() => {
-    if (showFilter === 'active') return todayBookings.filter((b) => !['cancelled', 'completed', 'rejected'].includes(b.status));
-    if (showFilter === 'completed') return todayBookings.filter((b) => b.status === 'completed');
-    return todayBookings;
-  }, [showFilter, todayBookings]);
-
-  const changeDate = (offset) => setSelectedDate((current) => {
-    const next = new Date(current);
-    next.setDate(next.getDate() + offset);
-    return next;
-  });
-
-  const getRoomBookings = (roomId) => filteredBookings.filter((b) => String(b.meeting_room_id || b.room_id || b.room?.id) === String(roomId));
-
   const toMinutes = (value) => {
     const [hours, minutes] = String(value || '00:00').split(':').map(Number);
     return hours * 60 + minutes;
   };
 
-  const getBookingStyle = (booking) => {
-    const start = Math.max(toMinutes(booking.start_time), 9 * 60);
-    const end = Math.min(toMinutes(booking.end_time), 18 * 60);
-    return {
-      left: `${((start - 9 * 60) / 30) * 100 / 18}%`,
-      width: `${Math.max(((end - start) / 30) * 100 / 18, 3.5)}%`,
-    };
-  };
-
-  const statusStyles = {
-    confirmed: { label: 'Confirmed', color: '#087F5B', background: '#D3F9D8' },
-    pending_department_head: { label: 'Pending', color: '#9A6700', background: '#FFF3BF' },
-    pending_hr: { label: 'Pending', color: '#C2410C', background: '#FFEDD5' },
-    pending_manager: { label: 'Pending', color: '#C2410C', background: '#FFEDD5' },
-    rejected: { label: 'Rejected', color: '#B91C1C', background: '#FEE2E2' },
-    cancelled: { label: 'Cancelled', color: '#6B7280', background: '#F3F4F6' },
+  const timeSlots = Array.from({ length: 18 }, (_, index) => 9 * 60 + index * 30);
+  const formatTime = (minutes) => new Date(0, 0, 1, Math.floor(minutes / 60), minutes % 60).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const getBookingForSlot = (roomId, slotStart) => todayBookings.find((booking) => {
+    const bookingRoomId = booking.meeting_room_id || booking.room_id || booking.room?.id;
+    return String(bookingRoomId) === String(roomId)
+      && !['cancelled', 'rejected'].includes(booking.status)
+      && toMinutes(booking.start_time) < slotStart + 30
+      && toMinutes(booking.end_time) > slotStart;
+  });
+  const openBooking = (room, slotStart) => {
+    const startTime = `${String(Math.floor(slotStart / 60)).padStart(2, '0')}:${String(slotStart % 60).padStart(2, '0')}`;
+    const endMinutes = slotStart + 30;
+    const endTime = `${String(Math.floor(endMinutes / 60)).padStart(2, '0')}:${String(endMinutes % 60).padStart(2, '0')}`;
+    navigate(`/meeting-room/book?date=${dateString}&roomId=${room.id}&startTime=${startTime}&endTime=${endTime}`);
   };
 
   // Filter bookings based on showFilter
@@ -116,34 +97,11 @@ export default function BookingDashboard() {
     </Card>
   );
 
-  const getStatusColor = (status) => {
-    const statusColors = {
-      confirmed: '#4caf50',
-      pending_department_head: '#ff9800',
-      pending_hr: '#2196f3',
-      rejected: '#f44336',
-      cancelled: '#9e9e9e',
-    };
-    return statusColors[status] || '#2196f3';
-  };
-
-  const getStatusLabel = (status) => {
-    const labels = {
-      confirmed: 'Confirmed',
-      pending_department_head: 'Pending Dept Head',
-      pending_hr: 'Pending HR',
-      rejected: 'Rejected',
-      cancelled: 'Cancelled',
-    };
-    return labels[status] || status;
-  };
-
   return (
     <Box>
-      <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ md: 'center' }} spacing={2} sx={{ mb: 3 }}>
-        <Box><Typography variant="h5" sx={{ fontWeight: 800 }}>Room schedule</Typography><Typography color="text.secondary" sx={{ mt: 0.5 }}>See every meeting room at a glance and find an open slot fast.</Typography></Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/booking/new')} sx={{ alignSelf: { xs: 'stretch', md: 'auto' } }}>Book a room</Button>
-      </Stack>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h5" sx={{ fontWeight: 800 }}>Room schedule</Typography>
+      </Box>
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6} md={3}>
@@ -185,25 +143,37 @@ export default function BookingDashboard() {
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={{ xs: 0.75, md: 2 }} alignItems={{ md: 'center' }}>
             <Box><Typography sx={{ fontWeight: 800 }}>Daily room board</Typography><Typography variant="body2" color="text.secondary">{selectedDate.toLocaleDateString('en-IN', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</Typography></Box>
             <Stack direction="row" spacing={0.75} flexWrap="wrap">
-              {[['confirmed', statusStyles.confirmed], ['pending', statusStyles.pending_department_head], ['rejected', statusStyles.rejected], ['cancelled', statusStyles.cancelled]].map(([key, style]) => <Chip key={key} label={style.label} size="small" sx={{ bgcolor: style.background, color: style.color, fontWeight: 700 }} />)}
+              <Chip label="Available" size="small" sx={{ bgcolor: '#DCFCE7', color: '#166534', fontWeight: 700 }} />
+              <Chip label="Booked" size="small" sx={{ bgcolor: '#DBEAFE', color: '#1D4ED8', fontWeight: 700 }} />
+              <Chip label="Maintenance / Not available" size="small" sx={{ bgcolor: '#FEE2E2', color: '#B91C1C', fontWeight: 700 }} />
             </Stack>
           </Stack>
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap"><Button size="small" variant="outlined" onClick={() => setSelectedDate(new Date())}>Today</Button><Button size="small" onClick={() => changeDate(-1)} sx={{ minWidth: 36, px: 0 }}><ChevronLeftIcon /></Button><Button size="small" onClick={() => changeDate(1)} sx={{ minWidth: 36, px: 0 }}><ChevronRightIcon /></Button><ToggleButtonGroup value={showFilter} exclusive onChange={(event, value) => value && setShowFilter(value)} size="small"><ToggleButton value="active">Active</ToggleButton><ToggleButton value="all">All</ToggleButton></ToggleButtonGroup></Stack>
+          <TextField
+            label="Select date"
+            type="date"
+            value={dateString}
+            onChange={(event) => setSelectedDate(new Date(`${event.target.value}T00:00:00`))}
+            size="small"
+            InputLabelProps={{ shrink: true }}
+            sx={{ minWidth: 170 }}
+          />
         </Stack>
-        {orientation === 'horizontal' ? <Box sx={{ overflowX: 'auto' }}><Box sx={{ minWidth: 1060 }}>
-          <Box sx={{ display: 'grid', gridTemplateColumns: '220px 1fr', bgcolor: '#F8FAFC', borderBottom: '1px solid', borderColor: 'divider' }}><Box sx={{ p: 1.5, borderRight: '1px solid', borderColor: 'divider' }}><Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary' }}>MEETING ROOM</Typography></Box><Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(18, 1fr)' }}>{Array.from({ length: 18 }, (_, index) => <Box key={index} sx={{ p: 1.5, borderRight: '1px solid', borderColor: 'divider', textAlign: 'center' }}><Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', whiteSpace: 'nowrap' }}>{new Date(0, 0, 1, 9 + Math.floor(index / 2), index % 2 ? 30 : 0).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</Typography></Box>)}</Box></Box>
-          {rooms.length === 0 ? <Box sx={{ p: 5, textAlign: 'center' }}><MeetingRoomIcon sx={{ color: 'text.disabled', fontSize: 42 }} /><Typography sx={{ mt: 1, fontWeight: 700 }}>No active rooms found</Typography></Box> : rooms.map((room) => <Box key={room.id} sx={{ display: 'grid', gridTemplateColumns: '220px 1fr', minHeight: 82, borderBottom: '1px solid', borderColor: 'divider' }}><Box sx={{ p: 1.5, borderRight: '1px solid', borderColor: 'divider', bgcolor: '#FCFDFE' }}><Typography sx={{ fontWeight: 800, fontSize: 14 }}>{room.name}</Typography><Typography variant="caption" color="text.secondary">Room {room.room_number} · {room.capacity} seats</Typography><Typography variant="caption" display="block" color="text.secondary">{room.location}</Typography></Box><Box sx={{ position: 'relative', backgroundImage: 'linear-gradient(to right, rgba(148,163,184,.18) 1px, transparent 1px)', backgroundSize: `${100 / 18}% 100%` }}>{getRoomBookings(room.id).map((booking) => { const style = statusStyles[booking.status] || statusStyles.confirmed; return <Box key={booking.id} sx={{ position: 'absolute', top: 10, bottom: 10, ...getBookingStyle(booking), px: 1.25, py: 0.75, overflow: 'hidden', borderRadius: 1.25, bgcolor: style.background, borderLeft: `4px solid ${style.color}`, color: style.color, boxShadow: '0 1px 3px rgba(15,23,42,.08)' }}><Typography noWrap sx={{ fontSize: 12, fontWeight: 800 }}>{booking.title}</Typography><Typography noWrap sx={{ fontSize: 11 }}>{booking.start_time?.slice(0, 5)} - {booking.end_time?.slice(0, 5)} · {style.label}</Typography></Box>; })}</Box></Box>)}
-        </Box></Box> : <Box sx={{ overflow: 'auto' }}><Box sx={{ minWidth: Math.max(760, 90 + rooms.length * 190) }}>
-          <Box sx={{ display: 'grid', gridTemplateColumns: `90px repeat(${Math.max(rooms.length, 1)}, minmax(190px, 1fr))`, bgcolor: '#F8FAFC', borderBottom: '1px solid', borderColor: 'divider' }}>
-            <Box sx={{ p: 1.5, borderRight: '1px solid', borderColor: 'divider' }}><Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary' }}>TIME</Typography><Typography variant="caption" display="block" color="text.secondary">ROOM</Typography></Box>
-            {rooms.map((room) => <Box key={room.id} sx={{ p: 1.5, borderRight: '1px solid', borderColor: 'divider' }}><Typography noWrap sx={{ fontWeight: 800, fontSize: 13 }}>{room.name}</Typography><Typography variant="caption" color="text.secondary">Room {room.room_number} · {room.capacity} seats</Typography></Box>)}
+        <Box sx={{ maxHeight: 620, overflow: 'auto' }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: `100px repeat(${Math.max(rooms.length, 1)}, minmax(180px, 1fr))`, minWidth: Math.max(760, 100 + rooms.length * 180) }}>
+            <Box sx={{ position: 'sticky', top: 0, left: 0, zIndex: 4, p: 1.5, bgcolor: '#F8FAFC', borderRight: '1px solid', borderBottom: '1px solid', borderColor: 'divider' }}><Typography variant="caption" sx={{ fontWeight: 800 }}>TIME</Typography></Box>
+            {rooms.map((room) => <Box key={room.id} sx={{ position: 'sticky', top: 0, zIndex: 3, p: 1.25, bgcolor: '#F8FAFC', borderRight: '1px solid', borderBottom: '1px solid', borderColor: 'divider' }}><Typography noWrap sx={{ fontWeight: 800, fontSize: 13 }}>{room.name}</Typography><Typography variant="caption" color="text.secondary">{room.capacity} seats</Typography></Box>)}
+            {timeSlots.flatMap((slotStart) => [
+              <Box key={`time-${slotStart}`} sx={{ position: 'sticky', left: 0, zIndex: 2, p: 1.25, bgcolor: '#FCFDFE', borderRight: '1px solid', borderBottom: '1px solid', borderColor: 'divider' }}><Typography variant="caption" sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>{formatTime(slotStart)}</Typography></Box>,
+              ...rooms.map((room) => {
+                const booking = getBookingForSlot(room.id, slotStart);
+                const unavailable = room.room_status !== 'active';
+                const style = unavailable ? { bgcolor: '#FEE2E2', color: '#B91C1C', label: 'Unavailable' } : booking ? { bgcolor: '#DBEAFE', color: '#1D4ED8', label: 'Booked' } : { bgcolor: '#DCFCE7', color: '#166534', label: 'Available' };
+                const detail = unavailable ? `${room.room_status === 'maintenance' ? 'Maintenance' : 'Not available'}: ${room.description || 'Room is not available for booking.'}` : booking ? `${booking.title}\nBooked by: ${booking.organizer?.name || 'Unknown'}\nDepartment: ${booking.department?.name || 'Not specified'}\n${booking.start_time?.slice(0, 5)} - ${booking.end_time?.slice(0, 5)}\nParticipants: ${booking.participants?.length || booking.participants_count || 0}` : `Available ${formatTime(slotStart)} - ${formatTime(slotStart + 30)}. Click to book.`;
+                return <Tooltip key={`${room.id}-${slotStart}`} title={<span style={{ whiteSpace: 'pre-line' }}>{detail}</span>} arrow><Box role={!unavailable && !booking ? 'button' : undefined} tabIndex={!unavailable && !booking ? 0 : undefined} onClick={() => !unavailable && !booking && openBooking(room, slotStart)} onKeyDown={(event) => event.key === 'Enter' && !unavailable && !booking && openBooking(room, slotStart)} sx={{ minHeight: 58, p: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: style.bgcolor, color: style.color, borderRight: '1px solid', borderBottom: '1px solid', borderColor: 'divider', cursor: !unavailable && !booking ? 'pointer' : 'default', '&:hover': !unavailable && !booking ? { filter: 'brightness(0.96)' } : {} }}><Typography variant="caption" sx={{ fontWeight: 800 }}>{style.label}</Typography></Box></Tooltip>;
+              }),
+            ])}
           </Box>
-          {Array.from({ length: 18 }, (_, index) => <Box key={index} sx={{ display: 'grid', gridTemplateColumns: `90px repeat(${Math.max(rooms.length, 1)}, minmax(190px, 1fr))`, minHeight: 58, borderBottom: '1px solid', borderColor: 'divider' }}>
-            <Box sx={{ p: 1.5, borderRight: '1px solid', borderColor: 'divider', bgcolor: '#FCFDFE' }}><Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', whiteSpace: 'nowrap' }}>{new Date(0, 0, 1, 9 + Math.floor(index / 2), index % 2 ? 30 : 0).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</Typography></Box>
-            {rooms.map((room) => <Box key={room.id} sx={{ position: 'relative', borderRight: '1px solid', borderColor: 'divider', backgroundColor: index % 2 ? '#FFFFFF' : '#FCFDFE' }}>{getRoomBookings(room.id).filter((booking) => Math.max(0, Math.floor((toMinutes(booking.start_time) - 9 * 60) / 30)) === index).map((booking) => { const style = statusStyles[booking.status] || statusStyles.confirmed; const span = Math.max(1, Math.ceil((toMinutes(booking.end_time) - toMinutes(booking.start_time)) / 30)); return <Box key={booking.id} sx={{ position: 'absolute', zIndex: 2, top: 4, left: 4, right: 4, height: `${span * 58 - 8}px`, px: 1, py: 0.75, overflow: 'hidden', borderRadius: 1.25, bgcolor: style.background, borderLeft: `4px solid ${style.color}`, color: style.color, boxShadow: '0 1px 3px rgba(15,23,42,.08)' }}><Typography noWrap sx={{ fontSize: 11, fontWeight: 800 }}>{room.name}</Typography><Typography noWrap sx={{ fontSize: 12, fontWeight: 800 }}>{booking.title}</Typography><Typography noWrap sx={{ fontSize: 11 }}>{booking.start_time?.slice(0, 5)} - {booking.end_time?.slice(0, 5)} · {style.label}</Typography></Box>; })}</Box>)}
-          </Box>)}
-        </Box></Box>}
-        <Box sx={{ p: 1, bgcolor: '#FCFDFE', borderTop: '1px solid', borderColor: 'divider' }}><Typography variant="caption" color="text.secondary">Room names remain visible while you scan the timeline.</Typography></Box>
+        </Box>
       </Paper>
     </Box>
   );

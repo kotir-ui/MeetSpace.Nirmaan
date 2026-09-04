@@ -75,10 +75,7 @@ export default function Login() {
               sx={{ width: '75%', maxWidth: 240, height: 'auto', mx: 'auto', display: 'block' }}
             />
             <Typography variant="h6" sx={{ mt: 1.5, fontWeight: 700, color: 'text.primary' }}>
-              MeetSpace Portal
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Meeting Room Booking & Management System
+              MeetSpace
             </Typography>
           </Box>
 

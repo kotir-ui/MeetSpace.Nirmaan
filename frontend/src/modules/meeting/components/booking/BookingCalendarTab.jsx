@@ -41,6 +41,7 @@ import {
   Info as InfoIcon,
   Edit as EditIcon,
 } from '@mui/icons-material';
+import { useLocation } from 'react-router-dom';
 import * as bookingApi from '../../api/booking.js';
 import api from '../../../../api/client.js';
 import { useAuth } from '../../../../context/AuthContext.jsx';
@@ -62,6 +63,7 @@ const ApprovalStatuses = [
 
 export default function BookingCalendarTab() {
   const { user } = useAuth();
+  const location = useLocation();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [bookings, setBookings] = useState([]);
@@ -96,6 +98,35 @@ export default function BookingCalendarTab() {
   // Approval workflow
   const [approvalStatus, setApprovalStatus] = useState('draft');
   const [showApprovalFlow, setShowApprovalFlow] = useState(false);
+
+  useEffect(() => {
+    const parameters = new URLSearchParams(location.search);
+    const date = parameters.get('date');
+    const start = parameters.get('startTime');
+    const end = parameters.get('endTime');
+    const roomId = parameters.get('roomId');
+
+    if (date) {
+      const bookingDate = new Date(`${date}T00:00:00`);
+      if (!Number.isNaN(bookingDate.getTime())) {
+        setSelectedDate(bookingDate);
+        setCurrentDate(bookingDate);
+      }
+    }
+    if (start) setStartTime(new Date(`1970-01-01T${start}:00`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    if (end) setEndTime(new Date(`1970-01-01T${end}:00`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    if (roomId) {
+      bookingApi.getRoomDetails(roomId)
+        .then((response) => {
+          const room = response.data?.data;
+          if (room?.room_status === 'active') {
+            setSelectedRoom(room.id);
+            setSelectedRoomData(room);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [location.search]);
 
   useEffect(() => {
     fetchBookingsForMonth();
@@ -138,7 +169,15 @@ export default function BookingCalendarTab() {
         capacity: numberOfPeople,
         building: building || undefined,
       });
-      setAvailableRooms(response.data?.data || []);
+      const matchingRooms = response.data?.data || [];
+      setAvailableRooms(matchingRooms);
+      if (selectedRoom) {
+        const selectedAvailableRoom = matchingRooms.find((room) => String(room.id) === String(selectedRoom));
+        if (selectedAvailableRoom) {
+          handleSelectRoom(selectedAvailableRoom);
+          return;
+        }
+      }
       setBookingStage('select');
     } catch (error) {
       console.error('Error fetching rooms:', error);
@@ -418,6 +457,11 @@ export default function BookingCalendarTab() {
 
             {bookingStage === 'details' && (
               <Box>
+                {selectedRoomData && (
+                  <Alert severity="success" sx={{ mb: 2 }}>
+                    Selected room: {selectedRoomData.name} ({selectedRoomData.capacity} seats)
+                  </Alert>
+                )}
                 {/* Meeting Type Selection */}
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.8, fontSize: '0.9rem' }}>
