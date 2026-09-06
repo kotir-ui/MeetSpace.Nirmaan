@@ -9,7 +9,7 @@ export const getAllRooms = async (req, res) => {
     const { status, capacity } = req.query;
 
     let where = {};
-    if (status) where.room_status = status;
+    if (status) where.status = status;
     if (capacity) where.capacity = { [Op.gte]: capacity };
 
     const rooms = await MeetingRoom.findAll({
@@ -199,9 +199,9 @@ export const getRoomSchedule = async (req, res) => {
 export const getRoomStats = async (req, res) => {
   try {
     const totalRooms = await MeetingRoom.count();
-    const activeRooms = await MeetingRoom.count({ where: { room_status: 'active' } });
-    const maintenanceRooms = await MeetingRoom.count({ where: { room_status: 'maintenance' } });
-    const disabledRooms = await MeetingRoom.count({ where: { room_status: 'disabled' } });
+    const activeRooms = await MeetingRoom.count({ where: { status: 'available' } });
+    const maintenanceRooms = await MeetingRoom.count({ where: { status: 'under_maintenance' } });
+    const disabledRooms = await MeetingRoom.count({ where: { status: 'inactive' } });
 
     const totalCapacity = await MeetingRoom.sum('capacity');
     const averageCapacity = Math.ceil(totalCapacity / totalRooms) || 0;

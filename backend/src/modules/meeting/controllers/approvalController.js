@@ -36,7 +36,7 @@ const logStatusChange = async (bookingId, previousStatus, newStatus, changedById
 // Get pending approvals for current user
 export const getPendingApprovals = async (req, res) => {
   try {
-    const { userId } = req.user;
+    const userId = req.user.id;
     const { approverType } = req.query;
 
     let where = {
@@ -99,7 +99,7 @@ export const getApprovalHistory = async (req, res) => {
 // Get approval dashboard (summary for approvers)
 export const getApprovalDashboard = async (req, res) => {
   try {
-    const { userId } = req.user;
+    const userId = req.user.id;
 
     const pending = await ApprovalRequest.count({
       where: { approver_id: userId, status: 'pending' },
@@ -132,7 +132,7 @@ export const getApprovalDashboard = async (req, res) => {
 export const approveBooking = async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId } = req.user;
+    const userId = req.user.id;
     const { comments } = req.body;
 
     const approval = await ApprovalRequest.findByPk(id);
@@ -254,7 +254,7 @@ export const approveBooking = async (req, res) => {
 export const rejectBooking = async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId } = req.user;
+    const userId = req.user.id;
     const { comments } = req.body;
 
     const approval = await ApprovalRequest.findByPk(id);

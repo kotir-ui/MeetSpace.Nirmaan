@@ -5,7 +5,7 @@ const { Notification, User } = db;
 // Get user notifications
 export const getUserNotifications = async (req, res) => {
   try {
-    const { userId } = req.user;
+    const userId = req.user.id;
     const { isRead } = req.query;
 
     let where = { user_id: userId };
@@ -32,7 +32,7 @@ export const getUserNotifications = async (req, res) => {
 // Get unread notification count
 export const getUnreadCount = async (req, res) => {
   try {
-    const { userId } = req.user;
+    const userId = req.user.id;
 
     const count = await Notification.count({
       where: { user_id: userId, is_read: false },
@@ -49,7 +49,7 @@ export const getUnreadCount = async (req, res) => {
 export const markAsRead = async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId } = req.user;
+    const userId = req.user.id;
 
     const notification = await Notification.findByPk(id);
     if (!notification) {
@@ -73,7 +73,7 @@ export const markAsRead = async (req, res) => {
 // Mark all notifications as read
 export const markAllAsRead = async (req, res) => {
   try {
-    const { userId } = req.user;
+    const userId = req.user.id;
 
     await Notification.update(
       { is_read: true },
@@ -91,7 +91,7 @@ export const markAllAsRead = async (req, res) => {
 export const deleteNotification = async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId } = req.user;
+    const userId = req.user.id;
 
     const notification = await Notification.findByPk(id);
     if (!notification) {
@@ -115,7 +115,7 @@ export const deleteNotification = async (req, res) => {
 // Delete all notifications
 export const deleteAllNotifications = async (req, res) => {
   try {
-    const { userId } = req.user;
+    const userId = req.user.id;
 
     await Notification.destroy({
       where: { user_id: userId },
@@ -131,7 +131,7 @@ export const deleteAllNotifications = async (req, res) => {
 // Get notification statistics
 export const getNotificationStats = async (req, res) => {
   try {
-    const { userId } = req.user;
+    const userId = req.user.id;
 
     const total = await Notification.count({ where: { user_id: userId } });
     const unread = await Notification.count({ where: { user_id: userId, is_read: false } });

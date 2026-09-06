@@ -49,7 +49,8 @@ const logStatusChange = async (bookingId, previousStatus, newStatus, changedById
 // Get all bookings (with role-based filtering)
 export const getBookings = async (req, res) => {
   try {
-    const { userId, userRole } = req.user;
+    const userId = req.user.id;
+    const userRole = req.user.role?.name || req.user.role;
     const { status, roomId, dateFrom, dateTo, departmentId } = req.query;
 
     let where = {};
@@ -63,8 +64,7 @@ export const getBookings = async (req, res) => {
     }
 
     // Role-based filtering
-    if (userRole === 'viewer' || userRole === 'manager') {
-      // Employees see only their own bookings
+    if (userRole === 'Viewer' || userRole === 'Employee') {
       where.organizer_id = userId;
     }
     // Admin/Super Admin see all bookings
@@ -179,27 +179,47 @@ export const checkAvailability = async (req, res) => {
 // Create booking
 export const createBooking = async (req, res) => {
   try {
-    const { userId } = req.user;
+    const userId = req.user.id;
     const {
-      title,
-      purpose,
-      meetingDate,
-      startTime,
-      endTime,
-      roomId,
-      departmentId,
+      title: reqTitle,
+      purpose: reqPurpose,
+      meetingDate: reqDate,
+      meeting_date,
+      startTime: reqStart,
+      start_time,
+      endTime: reqEnd,
+      end_time,
+      roomId: reqRoom,
+      room_id,
+      departmentId: reqDept,
+      department_id,
       meetingType,
+      meeting_type,
       participantsCount,
+      participants_count,
+      number_of_participants,
       externalParticipantsCount,
       isExternalMeeting,
       requiredFacilities,
       additionalNotes,
+      participant_names,
       participants,
     } = req.body;
 
+    const title = reqTitle || reqPurpose || 'Meeting';
+    const purpose = reqPurpose || title;
+    const meetingDate = reqDate || meeting_date;
+    const startTime = reqStart || start_time;
+    const endTime = reqEnd || end_time;
+    const roomId = reqRoom || room_id;
+    const departmentId = reqDept || department_id || req.user.department_id;
+    const finalMeetingType = meetingType || meeting_type || 'internal_meeting';
+    const finalParticipantsCount = participantsCount || participants_count || number_of_participants || 1;
+    const notes = additionalNotes || participant_names || '';
+
     // Validate required fields
     if (!title || !meetingDate || !startTime || !endTime || !roomId) {
-      return res.status(400).json({ success: false, error: 'Missing required fields' });
+      return res.status(400).json({ success: false, error: 'Missing required fields: title, meetingDate, startTime, endTime, roomId' });
     }
 
     // Check room exists
@@ -208,7 +228,7 @@ export const createBooking = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Room not found' });
     }
 
-    if (room.room_status !== 'active') {
+    if (room.status === 'inactive' || room.status === 'under_maintenance') {
       return res.status(400).json({ success: false, error: 'Room is not available' });
     }
 
@@ -241,13 +261,13 @@ export const createBooking = async (req, res) => {
       end_time: endTime,
       meeting_room_id: roomId,
       organizer_id: userId,
-      department_id: departmentId,
-      meeting_type: meetingType || 'internal_meeting',
-      participants_count: participantsCount,
+      department_id: departmentId || null,
+      meeting_type: finalMeetingType,
+      participants_count: finalParticipantsCount,
       external_participants_count: externalParticipantsCount || 0,
       is_external_meeting: isExternalMeeting || false,
       required_facilities: requiredFacilities,
-      additional_notes: additionalNotes,
+      additional_notes: notes,
       status: 'pending_department_head',
     });
 
@@ -261,23 +281,38 @@ export const createBooking = async (req, res) => {
       await BookingParticipant.bulkCreate(participantRecords);
     }
 
-    // Create approval request for department head
-    const departmentHead = await User.findOne({
-      where: { department_id: departmentId },
-      attributes: ['id'],
-    });
+    // Create approval request
+    let approverId = null;
+    if (departmentId) {
+      const departmentHead = await User.findOne({
+        where: { department_id: departmentId },
+        attributes: ['id'],
+      });
+      if (departmentHead) approverId = departmentHead.id;
+    }
 
-    if (departmentHead) {
+    if (!approverId) {
+      const adminUser = await User.findOne({
+        where: { status: 'active' },
+        include: [{
+          association: 'role',
+          attributes: ['id', 'name'],
+          where: { name: { [Op.in]: ['Super Admin', 'Admin'] } },
+        }],
+      });
+      if (adminUser) approverId = adminUser.id;
+    }
+
+    if (approverId && approverId !== userId) {
       await ApprovalRequest.create({
         meeting_booking_id: booking.id,
-        approver_id: departmentHead.id,
+        approver_id: approverId,
         approver_type: 'department_head',
         status: 'pending',
       });
 
-      // Notify department head
       await createNotification(
-        departmentHead.id,
+        approverId,
         'New Booking Request',
         `${title} requested for ${meetingDate}`,
         'booking_request',
@@ -308,7 +343,7 @@ export const createBooking = async (req, res) => {
 export const updateBooking = async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId } = req.user;
+    const userId = req.user.id;
     const { title, purpose, startTime, endTime, roomId, participantsCount, additionalNotes, participants } = req.body;
 
     const booking = await MeetingBooking.findByPk(id);
@@ -391,7 +426,7 @@ export const updateBooking = async (req, res) => {
 export const cancelBooking = async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId } = req.user;
+    const userId = req.user.id;
     const { reason } = req.body;
 
     const booking = await MeetingBooking.findByPk(id);
@@ -441,13 +476,13 @@ export const cancelBooking = async (req, res) => {
 // Get dashboard summary
 export const getDashboardSummary = async (req, res) => {
   try {
-    const { userId } = req.user;
+    const userId = req.user?.id;
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
 
     // Total rooms
     const totalRooms = await MeetingRoom.count({
-      where: { room_status: 'active' },
+      where: { status: { [Op.ne]: 'inactive' } },
     });
 
     // Available rooms now (no bookings at current time)
@@ -465,7 +500,7 @@ export const getDashboardSummary = async (req, res) => {
     // Pending approvals
     const pendingApprovals = await ApprovalRequest.count({
       where: {
-        approval_status: 'pending',
+        status: 'pending',
       },
     });
 

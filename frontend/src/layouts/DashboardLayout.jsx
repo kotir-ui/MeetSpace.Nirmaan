@@ -4,7 +4,7 @@ import { Box, useMediaQuery, useTheme } from '@mui/material';
 import Sidebar from './Sidebar.jsx';
 import Header from './Header.jsx';
 
-const DRAWER_WIDTH = 230;
+const DRAWER_WIDTH = 210;
 
 export default function DashboardLayout() {
   const theme = useTheme();

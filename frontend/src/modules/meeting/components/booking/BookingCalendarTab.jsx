@@ -47,8 +47,9 @@ import api from '../../../../api/client.js';
 import { useAuth } from '../../../../context/AuthContext.jsx';
 
 const TimeSlots = [
-  '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
-  '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM',
+  '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
+  '12:00 PM', '12:30 PM', '01:00 PM', '01:30 PM', '02:00 PM', '02:30 PM',
+  '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM', '05:00 PM', '05:30 PM',
 ];
 
 const ApprovalStatuses = [
@@ -130,7 +131,7 @@ export default function BookingCalendarTab() {
 
   useEffect(() => {
     fetchBookingsForMonth();
-    api.get('/api/departments').then((response) => setDepartments(response.data || [])).catch(() => setDepartments([]));
+    api.get('/departments').then((response) => setDepartments(response.data?.data || (Array.isArray(response.data) ? response.data : []))).catch(() => setDepartments([]));
   }, [currentDate]);
 
   const fetchBookingsForMonth = async () => {
@@ -188,7 +189,7 @@ export default function BookingCalendarTab() {
   };
 
   const handleDayClick = (day) => {
-    const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day, 12, 0, 0);
     if (newDate.getDay() === 0) return;
     setSelectedDate(newDate);
   };
@@ -262,13 +263,21 @@ export default function BookingCalendarTab() {
       const bookingData = {
         title: meetingPurpose,
         purpose: meetingPurpose,
-        meeting_date: selectedDate.toISOString().split('T')[0],
+        meetingDate: selectedDate.getFullYear() + '-' + String(selectedDate.getMonth() + 1).padStart(2, '0') + '-' + String(selectedDate.getDate()).padStart(2, '0'),
+        meeting_date: selectedDate.getFullYear() + '-' + String(selectedDate.getMonth() + 1).padStart(2, '0') + '-' + String(selectedDate.getDate()).padStart(2, '0'),
+        startTime: startTime,
         start_time: startTime,
+        endTime: endTime,
         end_time: endTime,
+        roomId: selectedRoom,
         room_id: selectedRoom,
-        number_of_participants: parseInt(numberOfPeople),
+        departmentId: user?.department_id || null,
+        department_id: user?.department_id || null,
+        number_of_participants: parseInt(numberOfPeople) || 1,
+        participantsCount: parseInt(numberOfPeople) || 1,
         participant_names: participantNames,
         organizer_id: user?.id,
+        meetingType: meetingType,
         meeting_type: meetingType,
         recurrence_type: meetingType === 'recurring' ? recurrenceType : null,
         recurrence_end_date: meetingType === 'recurring' ? recurrenceEndDate : null,
@@ -286,7 +295,7 @@ export default function BookingCalendarTab() {
       console.error('Error creating booking:', error);
       setSnackbar({
         open: true,
-        message: error.response?.data?.message || 'Failed to submit booking',
+        message: error.response?.data?.error || error.response?.data?.message || 'Failed to submit booking',
         severity: 'error',
       });
     } finally {

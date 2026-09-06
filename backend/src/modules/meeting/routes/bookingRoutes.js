@@ -30,17 +30,17 @@ router.put('/bookings/:id', authenticate, bookingController.updateBooking);
 router.delete('/bookings/:id', authenticate, bookingController.cancelBooking);
 
 // ===== ROOMS =====
+// Room statistics (MUST come before :id routes)
+router.get('/rooms/stats', authenticate, roomController.getRoomStats);
+
 // Get all rooms
 router.get('/rooms', authenticate, roomController.getAllRooms);
 
-// Get room details
-router.get('/rooms/:id', authenticate, roomController.getRoomDetails);
-
-// Get room schedule
+// Get room schedule (MUST come before :id route)
 router.get('/rooms/:id/schedule', authenticate, roomController.getRoomSchedule);
 
-// Room statistics
-router.get('/rooms/stats', authenticate, roomController.getRoomStats);
+// Get room details
+router.get('/rooms/:id', authenticate, roomController.getRoomDetails);
 
 // Create room (admin only)
 router.post('/rooms', authenticate, authorize('Super Admin', 'Admin', 'Department Manager'), roomController.createRoom);
@@ -71,20 +71,20 @@ router.post('/approvals/:id/approve', authenticate, approvalController.approveBo
 router.post('/approvals/:id/reject', authenticate, approvalController.rejectBooking);
 
 // ===== NOTIFICATIONS =====
+// Get unread count (MUST come before :id routes)
+router.get('/notifications/unread-count', authenticate, notificationController.getUnreadCount);
+
+// Get notification statistics (MUST come before :id routes)
+router.get('/notifications/stats', authenticate, notificationController.getNotificationStats);
+
 // Get user notifications
 router.get('/notifications', authenticate, notificationController.getUserNotifications);
 
-// Get unread count
-router.get('/notifications/unread-count', authenticate, notificationController.getUnreadCount);
-
-// Get notification statistics
-router.get('/notifications/stats', authenticate, notificationController.getNotificationStats);
+// Mark all as read (MUST come before :id routes)
+router.put('/notifications/read-all', authenticate, notificationController.markAllAsRead);
 
 // Mark notification as read
 router.put('/notifications/:id/read', authenticate, notificationController.markAsRead);
-
-// Mark all as read
-router.put('/notifications/read-all', authenticate, notificationController.markAllAsRead);
 
 // Delete notification
 router.delete('/notifications/:id', authenticate, notificationController.deleteNotification);
