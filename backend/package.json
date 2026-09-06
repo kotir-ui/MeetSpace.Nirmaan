@@ -6,11 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
-    "seed": "node src/seeders/seed.js",
-    "seed:platform": "node src/seeders/seedPlatform.js",
-    "seed:periods": "node src/seeders/seedPeriodValues.js",
-    "clear": "node src/seeders/clear.js"
+    "dev": "nodemon src/server.js"
   },
   "keywords": [
     "meetspace",
