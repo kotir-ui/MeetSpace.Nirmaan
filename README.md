@@ -116,7 +116,7 @@ DB_PASSWORD=
 JWT_SECRET=your_secret_key_change_this
 
 # Client
-CLIENT_URL=http://localhost:8302
+CLIENT_URL=http://localhost:8300
 ```
 
 ### 5️⃣ Start Backend
@@ -398,9 +398,9 @@ Every operation logs to the `activity_logs` table:
   user_id: 2,
   action: "CREATE",
   entity: "booking",
-  details: "Created booking for MR-01 on 2024-09-10",
+  details: "Created booking for MR-01 on 2026-09-10",
   ip_address: "127.0.0.1",
-  created_at: "2024-09-06T07:15:00Z"
+  created_at: "2026-09-06T07:15:00Z"
 }
 ```
 
@@ -443,6 +443,6 @@ Built with:
 
 ---
 
-**Last Updated**: September 6, 2024  
+**Last Updated**: September 6, 2026  
 **Status**: ✅ Fully Operational  
 **Version**: 1.0.0
