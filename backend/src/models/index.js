@@ -6,6 +6,10 @@ import Notification from './Notification.js';
 import PasswordResetOtp from './PasswordResetOtp.js';
 import ActivityLog from './ActivityLog.js';
 import AppSetting from './AppSetting.js';
+import Permission from './Permission.js';
+import RolePermission from './RolePermission.js';
+import UserPermission from './UserPermission.js';
+import LoginAttempt from './LoginAttempt.js';
 import MeetingRoom from '../modules/meeting/models/MeetingRoom.js';
 import RoomFacility from '../modules/meeting/models/RoomFacility.js';
 import MeetingBooking from '../modules/meeting/models/MeetingBooking.js';
@@ -18,9 +22,36 @@ import BookingStatusHistory from '../modules/meeting/models/BookingStatusHistory
 Role.hasMany(User, { foreignKey: 'role_id', as: 'users' });
 User.belongsTo(Role, { foreignKey: 'role_id', as: 'role' });
 
+// User - Manager (self-referencing)
+User.hasMany(User, { foreignKey: 'manager_id', as: 'subordinates' });
+User.belongsTo(User, { foreignKey: 'manager_id', as: 'manager' });
+
+// User - Department Head (self-referencing)
+User.belongsTo(User, { foreignKey: 'department_head_id', as: 'departmentHead' });
+
+// ---- Permission System ----
+// Role - Permission (through RolePermission)
+Role.hasMany(RolePermission, { foreignKey: 'role_id', as: 'permissions', onDelete: 'CASCADE' });
+RolePermission.belongsTo(Role, { foreignKey: 'role_id', as: 'role' });
+Permission.hasMany(RolePermission, { foreignKey: 'permission_id', as: 'rolePermissions', onDelete: 'CASCADE' });
+RolePermission.belongsTo(Permission, { foreignKey: 'permission_id', as: 'permission' });
+
+// User - Permission (for user-specific overrides and resource scopes)
+User.hasMany(UserPermission, { foreignKey: 'user_id', as: 'userPermissions', onDelete: 'CASCADE' });
+UserPermission.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+Permission.hasMany(UserPermission, { foreignKey: 'permission_id', as: 'userPermissions', onDelete: 'CASCADE' });
+UserPermission.belongsTo(Permission, { foreignKey: 'permission_id', as: 'permission' });
+
+// User - LoginAttempt (for login tracking)
+User.hasMany(LoginAttempt, { foreignKey: 'user_id', as: 'loginAttempts', onDelete: 'SET NULL' });
+
 // User - Department
 Department.hasMany(User, { foreignKey: 'department_id', as: 'users' });
 User.belongsTo(Department, { foreignKey: 'department_id', as: 'departmentGroup' });
+
+// Department - Head and Deputy (linking to User)
+Department.belongsTo(User, { foreignKey: 'department_head_id', as: 'head' });
+Department.belongsTo(User, { foreignKey: 'deputy_id', as: 'deputy' });
 
 // User - Activity Logs
 User.hasMany(ActivityLog, { foreignKey: 'user_id', as: 'logs' });
@@ -30,6 +61,13 @@ ActivityLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 // MeetingRoom - RoomFacility
 MeetingRoom.hasMany(RoomFacility, { foreignKey: 'meeting_room_id', as: 'facilities', onDelete: 'CASCADE' });
 RoomFacility.belongsTo(MeetingRoom, { foreignKey: 'meeting_room_id', as: 'room' });
+
+// MeetingRoom - Room Manager (User)
+MeetingRoom.belongsTo(User, { foreignKey: 'room_manager_id', as: 'roomManager' });
+
+// MeetingRoom - Owning Department
+MeetingRoom.belongsTo(Department, { foreignKey: 'owning_department_id', as: 'owningDepartment' });
+Department.hasMany(MeetingRoom, { foreignKey: 'owning_department_id', as: 'ownedRooms' });
 
 // User - MeetingBooking (Organizer)
 User.hasMany(MeetingBooking, { foreignKey: 'organizer_id', as: 'organizedBookings', onDelete: 'CASCADE' });
@@ -92,6 +130,10 @@ const db = {
   PasswordResetOtp,
   ActivityLog,
   AppSetting,
+  Permission,
+  RolePermission,
+  UserPermission,
+  LoginAttempt,
   MeetingRoom,
   RoomFacility,
   MeetingBooking,

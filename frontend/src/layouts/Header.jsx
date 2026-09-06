@@ -79,7 +79,7 @@ export default function Header({ onMenuClick }) {
     >
       <Toolbar sx={{ gap: 1 }}>
         <IconButton edge="start" onClick={onMenuClick} sx={{ display: { lg: 'none' } }}>
-          <MenuIcon />
+          ☰
         </IconButton>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }} />
@@ -89,7 +89,7 @@ export default function Header({ onMenuClick }) {
         <Tooltip title="Notifications">
           <IconButton onClick={(e) => { setNotifAnchor(e.currentTarget); loadNotifications(); }}>
             <Badge badgeContent={unread} color="error" max={99}>
-              <NotificationsIcon />
+              <span style={{ fontSize: '20px' }}>🔔</span>
             </Badge>
           </IconButton>
         </Tooltip>
@@ -155,7 +155,7 @@ export default function Header({ onMenuClick }) {
 
         <Tooltip title={mode === 'dark' ? 'Light mode' : 'Dark mode'}>
           <IconButton onClick={toggle}>
-            {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+            {mode === 'dark' ? '☀️' : '🌙'}
           </IconButton>
         </Tooltip>
 
@@ -175,11 +175,11 @@ export default function Header({ onMenuClick }) {
           <Divider />
           {settings.change_password_enabled && (
             <MenuItem onClick={() => { setAnchor(null); setPwOpen(true); }}>
-              <LockResetIcon fontSize="small" sx={{ mr: 1 }} /> Change Password
+              🔐 Change Password
             </MenuItem>
           )}
           <MenuItem onClick={logout}>
-            <LogoutIcon fontSize="small" sx={{ mr: 1 }} /> Logout
+            🚪 Logout
           </MenuItem>
         </Menu>
 

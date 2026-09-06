@@ -1,23 +1,32 @@
 import { Router } from 'express';
 import {
-  listUsers,
+  getAllUsers,
+  getUserById,
   createUser,
   updateUser,
+  changeUserStatus,
   deleteUser,
-  getRoles,
-  resetUserPassword,
-} from '../controllers/userController.js';
-import { authenticate, authorize } from '../middleware/auth.js';
+  getUserAccessPreview,
+} from '../controllers/userManagementController.js';
+import { getRoles } from '../controllers/userController.js';
+import { requireAuth } from '../middleware/auth.js';
+import { requirePermission } from '../middleware/authorization.js';
 
 const router = Router();
 
-router.use(authenticate);
+// All routes require authentication
+router.use(requireAuth);
 
+// Get roles list (available to all authenticated users)
 router.get('/roles', getRoles);
-router.get('/', authorize('Super Admin', 'Admin', 'Manager'), listUsers);
-router.post('/', authorize('Super Admin', 'Admin'), createUser);
-router.put('/:id', authorize('Super Admin', 'Admin'), updateUser);
-router.post('/:id/reset-password', authorize('Super Admin', 'Admin'), resetUserPassword);
-router.delete('/:id', authorize('Super Admin', 'Admin'), deleteUser);
+
+// User management endpoints with permission checks
+router.get('/', requirePermission('Users', 'View'), getAllUsers);
+router.get('/:id', requirePermission('Users', 'View'), getUserById);
+router.post('/', requirePermission('Users', 'Create'), createUser);
+router.put('/:id', requirePermission('Users', 'Edit'), updateUser);
+router.patch('/:id/status', requirePermission('Users', 'Edit'), changeUserStatus);
+router.delete('/:id', requirePermission('Users', 'Delete'), deleteUser);
+router.get('/:id/access-preview', requirePermission('Users', 'View'), getUserAccessPreview);
 
 export default router;

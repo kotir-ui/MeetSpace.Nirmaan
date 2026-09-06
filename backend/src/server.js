@@ -12,7 +12,7 @@ const start = async () => {
     console.log('✅ Database connection established');
 
     // Sync models (creates missing tables only)
-    await db.sequelize.sync();
+    await db.sequelize.sync({ force: process.env.FORCE_SYNC === 'true' });
     console.log('✅ Models synchronized');
 
     app.listen(PORT, () => {
@@ -20,6 +20,7 @@ const start = async () => {
     });
   } catch (err) {
     console.error('❌ Failed to start server:', err.message);
+    console.error('Full error:', err);
     process.exit(1);
   }
 };

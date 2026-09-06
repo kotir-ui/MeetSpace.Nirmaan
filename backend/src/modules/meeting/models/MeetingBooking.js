@@ -12,6 +12,8 @@ const MeetingBooking = sequelize.define(
     start_time: { type: DataTypes.TIME, allowNull: false }, // HH:MM:SS
     end_time: { type: DataTypes.TIME, allowNull: false },
     meeting_room_id: { type: DataTypes.INTEGER, allowNull: false },
+    building: { type: DataTypes.STRING(100), allowNull: true, comment: 'Building preference' },
+    floor: { type: DataTypes.INTEGER, allowNull: true, comment: 'Floor preference' },
     organizer_id: { type: DataTypes.INTEGER, allowNull: false }, // FK to User
     department_id: { type: DataTypes.INTEGER, allowNull: true }, // FK to Department
     meeting_type: {

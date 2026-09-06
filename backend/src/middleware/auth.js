@@ -38,3 +38,6 @@ export const authorize = (...roles) => {
     next();
   };
 };
+
+// Alias for authenticate
+export const requireAuth = authenticate;

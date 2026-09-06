@@ -7,7 +7,7 @@ import ProtectedRoute from './components/ProtectedRoute.jsx';
 import DashboardLayout from './layouts/DashboardLayout.jsx';
 import Login from './pages/Login.jsx';
 import Landing from './pages/Landing.jsx';
-import Users from './pages/Users.jsx';
+// import Users from './pages/Users.jsx'; // Temporarily disabled - requires DataGrid
 import LoadingScreen from './components/LoadingScreen.jsx';
 import MeetingRoomBooking from './modules/meeting/pages/MeetingRoomBooking.jsx';
 
@@ -37,14 +37,15 @@ export default function App() {
           <Route path="/meeting-room/book" element={<MeetingRoomBooking view="book" />} />
           <Route path="/meeting-room/my-bookings" element={<MeetingRoomBooking view="my-bookings" />} />
           <Route path="/meeting-room/admin" element={<MeetingRoomBooking view="admin" />} />
-          <Route
+          {/* Users route temporarily disabled - requires DataGrid */}
+          {/* <Route
             path="/users"
             element={
               <ProtectedRoute roles={['Super Admin', 'Admin', 'Manager']}>
                 <Users />
               </ProtectedRoute>
             }
-          />
+          /> */}
         </Route>
         <Route path="*" element={<Navigate to="/meeting-room" replace />} />
       </Routes>

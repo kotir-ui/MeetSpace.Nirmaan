@@ -12,8 +12,7 @@ import {
   IconButton,
   Link,
 } from '@mui/material';
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext.jsx';
 import { DARK_BLUE } from '../theme.js';
 import api from '../api/client.js';
@@ -134,7 +133,8 @@ export default function Login() {
         </CardContent>
       </Card>
 
-      <ForgotPasswordDialog open={forgotOpen} onClose={() => setForgotOpen(false)} initialEmail={email} />
+      {/* ForgotPasswordDialog temporarily commented out for debugging */}
+      {/* <ForgotPasswordDialog open={forgotOpen} onClose={() => setForgotOpen(false)} initialEmail={email} /> */}
     </Box>
   );
 }

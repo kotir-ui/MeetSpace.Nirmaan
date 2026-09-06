@@ -5,12 +5,20 @@ import { logActivity } from '../utils/activity.js';
 import { getSettingsMap, isFeatureEnabled } from './settingsController.js';
 import { createNotification } from './notificationController.js';
 
-const { User, Role, PasswordResetOtp } = db;
+const { User, Role, PasswordResetOtp, LoginAttempt } = db;
 
 const signToken = (user) =>
   jwt.sign({ id: user.id, role: user.role?.name }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || '1d',
   });
+
+const getClientIp = (req) => {
+  return (
+    req.headers['x-forwarded-for']?.split(',')[0].trim() ||
+    req.connection.remoteAddress ||
+    'unknown'
+  );
+};
 
 export const login = async (req, res, next) => {
   try {
@@ -24,19 +32,49 @@ export const login = async (req, res, next) => {
       include: [{ model: Role, as: 'role' }],
     });
 
+    const clientIp = getClientIp(req);
+    const userAgent = req.headers['user-agent'] || 'unknown';
+
+    // Check for invalid credentials
     if (!user || !(await user.comparePassword(password))) {
+      await LoginAttempt.create({
+        user_id: user?.id || null,
+        email,
+        attempt_status: 'failed',
+        ip_address: clientIp,
+        user_agent: userAgent,
+        failed_reason: !user ? 'user_not_found' : 'invalid_password',
+      });
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    // Check for inactive account
     if (user.status !== 'active') {
+      await LoginAttempt.create({
+        user_id: user.id,
+        email,
+        attempt_status: 'failed',
+        ip_address: clientIp,
+        user_agent: userAgent,
+        failed_reason: 'account_inactive',
+      });
       return res.status(403).json({ message: 'Account is inactive' });
     }
 
+    // Update last login and record successful attempt
     user.last_login = new Date();
     await user.save();
 
+    await LoginAttempt.create({
+      user_id: user.id,
+      email,
+      attempt_status: 'success',
+      ip_address: clientIp,
+      user_agent: userAgent,
+    });
+
     const token = signToken(user);
-    await logActivity(req, 'LOGIN', 'auth', `User ${user.email} logged in`);
+    await logActivity(req, 'LOGIN', 'auth', `User ${user.email} logged in from ${clientIp}`);
 
     res.json({
       token,

@@ -10,6 +10,12 @@ const User = sequelize.define(
       autoIncrement: true,
       primaryKey: true,
     },
+    employee_id: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+      unique: true,
+      comment: 'Unique employee identifier',
+    },
     name: {
       type: DataTypes.STRING(120),
       allowNull: false,
@@ -19,6 +25,14 @@ const User = sequelize.define(
       allowNull: false,
       unique: true,
       validate: { isEmail: true },
+    },
+    mobile: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+    },
+    designation: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
     },
     password: {
       type: DataTypes.STRING(255),
@@ -31,22 +45,56 @@ const User = sequelize.define(
     department_id: {
       type: DataTypes.INTEGER,
       allowNull: true,
+      comment: 'Department this user belongs to',
     },
-    department: {
-      type: DataTypes.STRING(120),
+    manager_id: {
+      type: DataTypes.INTEGER,
       allowNull: true,
+      references: { model: 'users', key: 'id' },
+      comment: 'Direct manager/supervisor',
+    },
+    department_head_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: { model: 'users', key: 'id' },
+      comment: 'Department head for approval workflows',
     },
     status: {
-      type: DataTypes.ENUM('active', 'inactive'),
+      type: DataTypes.ENUM('active', 'inactive', 'suspended', 'locked'),
       defaultValue: 'active',
+      comment: 'active | inactive | suspended | locked',
+    },
+    joining_date: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    profile_image: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: 'URL or path to profile image',
+    },
+    password_status: {
+      type: DataTypes.STRING(50),
+      defaultValue: 'set',
+      comment: 'set | reset_required | expired',
     },
     last_login: {
       type: DataTypes.DATE,
       allowNull: true,
     },
+    created_at: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+    },
+    updated_at: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+    },
   },
   {
     tableName: 'users',
+    timestamps: true,
+    underscored: true,
     defaultScope: {
       attributes: { exclude: ['password'] },
     },

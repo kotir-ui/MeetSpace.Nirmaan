@@ -53,9 +53,9 @@ export default function Sidebar({ width, mobileOpen, onClose, isDesktop }) {
         <Typography variant="overline" sx={{ px: 2, color: 'text.secondary', fontWeight: 600 }}>
           Workspace
         </Typography>
-        <NavItem to="/meeting-room/dashboard" icon={<ScheduleIcon />} label="Dashboard" onClose={onClose} />
-        <NavItem to="/meeting-room/book" icon={<MeetingRoomIcon />} label="Book Room" onClose={onClose} />
-        <NavItem to="/meeting-room/my-bookings" icon={<EventNoteIcon />} label="My Bookings" onClose={onClose} />
+        <NavItem to="/meeting-room/dashboard" label="📊 Dashboard" onClose={onClose} />
+        <NavItem to="/meeting-room/book" label="📅 Book Room" onClose={onClose} />
+        <NavItem to="/meeting-room/my-bookings" label="📝 My Bookings" onClose={onClose} />
 
         {(user?.role === 'Super Admin' || user?.role === 'Admin' || user?.role === 'Manager' || user?.role === 'Department Manager') && (
           <>
@@ -63,8 +63,8 @@ export default function Sidebar({ width, mobileOpen, onClose, isDesktop }) {
             <Typography variant="overline" sx={{ px: 2, color: 'text.secondary', fontWeight: 600 }}>
               Administration
             </Typography>
-            <NavItem to="/meeting-room/admin" icon={<AdminPanelSettingsIcon />} label="Admin Control" onClose={onClose} />
-            <NavItem to="/users" icon={<PeopleIcon />} label="Users & Roles" onClose={onClose} />
+            <NavItem to="/meeting-room/admin" label="⚙️ Admin Control" onClose={onClose} />
+            <NavItem to="/users" label="👥 Users & Roles" onClose={onClose} />
           </>
         )}
       </List>
@@ -112,7 +112,7 @@ export default function Sidebar({ width, mobileOpen, onClose, isDesktop }) {
   );
 }
 
-function NavItem({ to, icon, label, nested, onClose }) {
+function NavItem({ to, label, nested, onClose }) {
   return (
     <ListItemButton
       component={NavLink}
@@ -134,7 +134,6 @@ function NavItem({ to, icon, label, nested, onClose }) {
         '&:hover': { bgcolor: 'action.hover' },
       }}
     >
-      <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}>{icon}</ListItemIcon>
       <ListItemText primary={label} primaryTypographyProps={{ fontSize: 14, fontWeight: 'inherit' }} />
     </ListItemButton>
   );

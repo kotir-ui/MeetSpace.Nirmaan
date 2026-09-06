@@ -12,34 +12,27 @@ import {
   AppBar,
   Toolbar,
 } from '@mui/material';
-import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import HowToRegIcon from '@mui/icons-material/HowToReg';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import DevicesIcon from '@mui/icons-material/Devices';
-import GroupWorkIcon from '@mui/icons-material/GroupWork';
 import { useAuth } from '../context/AuthContext.jsx';
 import { DARK_BLUE } from '../theme.js';
 
 const FEATURES = [
   {
-    icon: <MeetingRoomIcon sx={{ fontSize: 32, color: '#1B4EF5' }} />,
+    emoji: '🏢',
     title: 'Meeting Room Booking',
     desc: 'Reserve conference rooms, inspect capacity, facilities (Projector, VC, Whiteboard), and book time slots with live conflict checking.',
   },
   {
-    icon: <CalendarMonthIcon sx={{ fontSize: 32, color: '#10B981' }} />,
+    emoji: '📅',
     title: 'Interactive Schedule Calendar',
     desc: 'View real-time room availability across the entire organization with day and week calendar schedules.',
   },
   {
-    icon: <CheckCircleOutlineIcon sx={{ fontSize: 32, color: '#F59E0B' }} />,
+    emoji: '✅',
     title: 'Multi-Stage Approvals',
     desc: 'Automated workflow with Department Head and HR approvals to manage and approve room allocations effortlessly.',
   },
   {
-    icon: <HowToRegIcon sx={{ fontSize: 32, color: '#8B5CF6' }} />,
+    emoji: '👤',
     title: 'User & Role Management',
     desc: 'Role-based access control for Super Admins, Admins, Managers, and Viewers across all Nirmaan departments.',
   },
@@ -75,11 +68,10 @@ export default function Landing() {
           <Button
             variant="contained"
             color="primary"
-            startIcon={<MeetingRoomIcon />}
             onClick={handleLaunch}
             sx={{ fontWeight: 700, px: 3, borderRadius: 2 }}
           >
-            {user ? 'Open Dashboard' : 'Sign In'}
+            📅 {user ? 'Open Dashboard' : 'Sign In'}
           </Button>
         </Toolbar>
       </AppBar>
@@ -136,8 +128,6 @@ export default function Landing() {
                   size="large"
                   variant="contained"
                   color="secondary"
-                  startIcon={<MeetingRoomIcon />}
-                  endIcon={<ArrowForwardIcon />}
                   onClick={handleLaunch}
                   sx={{
                     py: 1.5,
@@ -148,7 +138,7 @@ export default function Landing() {
                     boxShadow: '0 8px 24px rgba(27,78,245,0.3)',
                   }}
                 >
-                  {user ? 'Enter MeetSpace' : 'Book a Meeting Room'}
+                  📅 {user ? 'Enter MeetSpace' : 'Book a Meeting Room'} →
                 </Button>
               </Stack>
             </Grid>
@@ -225,7 +215,9 @@ export default function Landing() {
                 }}
               >
                 <CardContent sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%' }}>
-                  <Box sx={{ mb: 2 }}>{feat.icon}</Box>
+                  <Box sx={{ mb: 2, fontSize: 40 }}>
+                    {feat.emoji}
+                  </Box>
                   <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1, color: DARK_BLUE }}>
                     {feat.title}
                   </Typography>
