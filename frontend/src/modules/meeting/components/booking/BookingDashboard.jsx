@@ -281,7 +281,7 @@ export default function BookingDashboard() {
                               <MeetingRoomIcon sx={{ fontSize: 26 }} />
                             </Box>
                             <Box>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.5 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                                 <Typography variant="h6" sx={{ fontWeight: 800, fontSize: 17, lineHeight: 1.2 }}>
                                   {room.name}
                                 </Typography>
@@ -293,9 +293,6 @@ export default function BookingDashboard() {
                                   sx={{ fontWeight: 600, fontSize: 11, height: 22 }}
                                 />
                               </Box>
-                              <Typography variant="caption" color="text.secondary">
-                                {room.location || room.building || 'Main Building'} • Floor {room.floor || 1}
-                              </Typography>
                             </Box>
                           </Box>
                           <Chip
@@ -311,18 +308,12 @@ export default function BookingDashboard() {
                         </Stack>
 
                         {/* Room Meta Badges */}
-                        <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap', gap: 0.5 }}>
+                        <Stack direction="row" spacing={1} sx={{ mb: 1.5, flexWrap: 'wrap', gap: 0.5 }}>
                           <Chip icon={<LocationOnIcon sx={{ fontSize: '14px !important' }} />} label={room.location || room.room_number || 'Floor ' + room.floor} size="small" variant="outlined" sx={{ fontWeight: 600, fontSize: 12 }} />
                           {room.room_type && (
                             <Chip icon={<LocalOfferIcon sx={{ fontSize: '13px !important' }} />} label={room.room_type} size="small" variant="outlined" sx={{ fontWeight: 600, fontSize: 12 }} />
                           )}
                         </Stack>
-
-                        {room.description && (
-                          <Typography variant="body2" color="text.secondary" sx={{ fontSize: 13, mb: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                            {room.description}
-                          </Typography>
-                        )}
 
                         <Divider sx={{ my: 1.5 }} />
 
