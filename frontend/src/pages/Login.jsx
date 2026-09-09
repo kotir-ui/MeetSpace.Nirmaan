@@ -152,47 +152,6 @@ export default function Login() {
               </Box>
             )}
           </form>
-
-          {/* Quick Demo Accounts */}
-          <Box sx={{ mt: 3, pt: 2.5, borderTop: '1px dashed', borderColor: 'divider' }}>
-            <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 1.5, textAlign: 'center' }}>
-              ⚡ Quick Demo Login Accounts
-            </Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() => { setEmail('superadmin@nirmaan.org'); setPassword('Super@123'); }}
-                sx={{ textTransform: 'none', fontSize: '0.75rem', py: 0.5, borderColor: '#d32f2f', color: '#d32f2f', '&:hover': { bgcolor: '#ffebee' } }}
-              >
-                Super Admin
-              </Button>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() => { setEmail('admin@nirmaan.org'); setPassword('Admin@123'); }}
-                sx={{ textTransform: 'none', fontSize: '0.75rem', py: 0.5, borderColor: '#1976d2', color: '#1976d2', '&:hover': { bgcolor: '#e3f2fd' } }}
-              >
-                Admin
-              </Button>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() => { setEmail('manager@nirmaan.org'); setPassword('Manager@123'); }}
-                sx={{ textTransform: 'none', fontSize: '0.75rem', py: 0.5, borderColor: '#ed6c02', color: '#ed6c02', '&:hover': { bgcolor: '#fff3e0' } }}
-              >
-                Manager
-              </Button>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() => { setEmail('viewer@nirmaan.org'); setPassword('Viewer@123'); }}
-                sx={{ textTransform: 'none', fontSize: '0.75rem', py: 0.5, borderColor: '#757575', color: '#757575', '&:hover': { bgcolor: '#f5f5f5' } }}
-              >
-                Viewer
-              </Button>
-            </Box>
-          </Box>
         </CardContent>
       </Card>
     </Box>
