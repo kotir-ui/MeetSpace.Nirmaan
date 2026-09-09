@@ -144,16 +144,33 @@ export default function Login() {
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>
-            {forgotEnabled && (
-              <Box sx={{ textAlign: 'center', mt: 2 }}>
-                <Link component="button" type="button" variant="body2" onClick={() => setForgotOpen(true)}>
-                  Forgot Password?
-                </Link>
-              </Box>
-            )}
+            <Box sx={{ textAlign: 'center', mt: 2.5 }}>
+              <Link
+                component="button"
+                type="button"
+                variant="body2"
+                onClick={() => setForgotOpen(true)}
+                sx={{
+                  fontWeight: 600,
+                  color: 'primary.main',
+                  textDecoration: 'none',
+                  cursor: 'pointer',
+                  '&:hover': { textDecoration: 'underline' },
+                }}
+              >
+                Forgot Password?
+              </Link>
+            </Box>
           </form>
         </CardContent>
       </Card>
+
+      {/* Forgot Password Reset Dialog with OTP verification */}
+      <ForgotPasswordDialog
+        open={forgotOpen}
+        onClose={() => setForgotOpen(false)}
+        initialEmail={email}
+      />
     </Box>
   );
 }
