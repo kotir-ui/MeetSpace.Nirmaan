@@ -281,9 +281,18 @@ export default function BookingDashboard() {
                               <MeetingRoomIcon sx={{ fontSize: 26 }} />
                             </Box>
                             <Box>
-                              <Typography variant="h6" sx={{ fontWeight: 800, fontSize: 17, lineHeight: 1.2 }}>
-                                {room.name}
-                              </Typography>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.5 }}>
+                                <Typography variant="h6" sx={{ fontWeight: 800, fontSize: 17, lineHeight: 1.2 }}>
+                                  {room.name}
+                                </Typography>
+                                <Chip
+                                  icon={<PeopleIcon sx={{ fontSize: '13px !important' }} />}
+                                  label={`${room.capacity} Seats`}
+                                  size="small"
+                                  variant="outlined"
+                                  sx={{ fontWeight: 600, fontSize: 11, height: 22 }}
+                                />
+                              </Box>
                               <Typography variant="caption" color="text.secondary">
                                 {room.location || room.building || 'Main Building'} • Floor {room.floor || 1}
                               </Typography>
@@ -303,7 +312,6 @@ export default function BookingDashboard() {
 
                         {/* Room Meta Badges */}
                         <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap', gap: 0.5 }}>
-                          <Chip icon={<PeopleIcon sx={{ fontSize: '14px !important' }} />} label={`${room.capacity} Seats`} size="small" variant="outlined" sx={{ fontWeight: 600, fontSize: 12 }} />
                           <Chip icon={<LocationOnIcon sx={{ fontSize: '14px !important' }} />} label={room.location || room.room_number || 'Floor ' + room.floor} size="small" variant="outlined" sx={{ fontWeight: 600, fontSize: 12 }} />
                           {room.room_type && (
                             <Chip icon={<LocalOfferIcon sx={{ fontSize: '13px !important' }} />} label={room.room_type} size="small" variant="outlined" sx={{ fontWeight: 600, fontSize: 12 }} />
