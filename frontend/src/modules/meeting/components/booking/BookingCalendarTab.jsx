@@ -565,40 +565,6 @@ export default function BookingCalendarTab() {
 
                 <Divider sx={{ my: 1.5 }} />
 
-                {/* Visual Time Slot Selector */}
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5, mb: 1, display: 'block' }}>
-                    Available Time Slots (Click to choose start & end):
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, maxHeight: 150, overflowY: 'auto', p: 0.5, bgcolor: 'action.hover', borderRadius: 1.5 }}>
-                    {TimeSlots.map((time, idx) => {
-                      const isSelected = startTime === time;
-                      const isInRange = startTime && endTime && TimeSlots.indexOf(startTime) <= idx && idx <= TimeSlots.indexOf(endTime);
-                      
-                      return (
-                        <Chip
-                          key={time}
-                          label={time}
-                          size="small"
-                          onClick={() => {
-                            setStartTime(time);
-                            // Auto select next slot as end time
-                            const nextSlot = TimeSlots[idx + 1] || time;
-                            setEndTime(nextSlot);
-                          }}
-                          color={isSelected || isInRange ? 'primary' : 'default'}
-                          variant={isSelected || isInRange ? 'filled' : 'outlined'}
-                          sx={{
-                            fontWeight: isSelected || isInRange ? 700 : 500,
-                            cursor: 'pointer',
-                            fontSize: '0.75rem',
-                          }}
-                        />
-                      );
-                    })}
-                  </Box>
-                </Box>
-
                 {/* Time Selection Dropdowns */}
                 <Grid container spacing={1.5} sx={{ mb: 2 }}>
                   <Grid item xs={12} sm={6}>
