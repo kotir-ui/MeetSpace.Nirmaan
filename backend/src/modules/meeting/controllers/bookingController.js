@@ -52,7 +52,7 @@ export const getBookings = async (req, res) => {
   try {
     const userId = req.user.id;
     const userRole = req.user.role?.name || req.user.role;
-    const { status, roomId, dateFrom, dateTo, departmentId } = req.query;
+    const { status, roomId, dateFrom, dateTo, departmentId, myBookings, my_bookings, myBookingsOnly } = req.query;
 
     // Auto-complete expired/past bookings to free up rooms automatically
     const now = new Date();
@@ -331,6 +331,14 @@ export const createBooking = async (req, res) => {
 
     if (room.status === 'inactive' || room.status === 'under_maintenance') {
       return res.status(400).json({ success: false, error: 'Room is not available' });
+    }
+
+    // Check room capacity limit
+    if (room.capacity && finalParticipantsCount > room.capacity) {
+      return res.status(400).json({
+        success: false,
+        error: `This room (${room.name}) allows maximum ${room.capacity} members only. You requested for ${finalParticipantsCount} members. In case you need to add more people, please choose another room with larger capacity.`,
+      });
     }
 
     // Check for time conflicts

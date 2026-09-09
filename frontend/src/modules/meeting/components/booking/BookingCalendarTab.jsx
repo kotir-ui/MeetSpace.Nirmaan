@@ -91,9 +91,45 @@ export default function BookingCalendarTab() {
   const [endTime, setEndTime] = useState('');
   const [numberOfPeople, setNumberOfPeople] = useState('');
   const [participantNames, setParticipantNames] = useState('');
+  const [participantList, setParticipantList] = useState([]);
   const [department, setDepartment] = useState(user?.department || '');
   const [building, setBuilding] = useState('');
   const [meetingPurpose, setMeetingPurpose] = useState('');
+
+  const handleNumberOfPeopleChange = (val) => {
+    setNumberOfPeople(val);
+    const count = parseInt(val, 10);
+    if (!isNaN(count) && count > 0) {
+      const safeCount = Math.min(count, 50);
+      setParticipantList((prev) => {
+        const next = [...prev];
+        if (next.length < safeCount) {
+          while (next.length < safeCount) {
+            next.push('');
+          }
+        } else if (next.length > safeCount) {
+          next.length = safeCount;
+        }
+        return next;
+      });
+    } else {
+      setParticipantList([]);
+    }
+  };
+
+  const handleParticipantNameChange = (index, name) => {
+    setParticipantList((prev) => {
+      const next = [...prev];
+      next[index] = name;
+      const formatted = next
+        .map((n) => (n || '').trim())
+        .filter(Boolean)
+        .map((n, i) => `${i + 1}. ${n}`)
+        .join('\n');
+      setParticipantNames(formatted);
+      return next;
+    });
+  };
   
   // Recurring fields
   const [recurrenceType, setRecurrenceType] = useState('weekly');
@@ -246,6 +282,15 @@ export default function BookingCalendarTab() {
       });
       const matchingRooms = response.data?.data || [];
       setAvailableRooms(matchingRooms);
+      
+      const isCapacityExceeded = Boolean(selectedRoomData && parseInt(numberOfPeople, 10) > selectedRoomData.capacity);
+      if (isCapacityExceeded) {
+        setSelectedRoom(null);
+        setSelectedRoomData(null);
+        setBookingStage('select');
+        return;
+      }
+
       if (selectedRoom) {
         const selectedAvailableRoom = matchingRooms.find((room) => String(room.id) === String(selectedRoom));
         if (selectedAvailableRoom) {
@@ -334,6 +379,16 @@ export default function BookingCalendarTab() {
   const handleSubmitBooking = async () => {
     try {
       setLoading(true);
+      if (selectedRoomData && parseInt(numberOfPeople, 10) > selectedRoomData.capacity) {
+        setSnackbar({
+          open: true,
+          message: `This room (${selectedRoomData.name}) allows maximum ${selectedRoomData.capacity} members only. In case you need to add more people (${numberOfPeople}), please choose another room with larger capacity.`,
+          severity: 'error',
+        });
+        setLoading(false);
+        return;
+      }
+
       const selectedDeptObj = departments.find((d) => d.name === department || d.id === department || d.department_name === department);
       const resolvedDeptId = selectedDeptObj?.id || user?.department_id || null;
 
@@ -387,6 +442,7 @@ export default function BookingCalendarTab() {
     setEndTime('');
     setNumberOfPeople('');
     setParticipantNames('');
+    setParticipantList([]);
     setBuilding('');
     setMeetingPurpose('');
     setSelectedRoom(null);
@@ -542,11 +598,44 @@ export default function BookingCalendarTab() {
               <EditIcon sx={{ fontSize: 20 }} /> Book Meeting Room
             </Typography>
 
-            {bookingStage === 'details' && (
+            {bookingStage === 'details' && (() => {
+              const isCapacityExceeded = Boolean(selectedRoomData && parseInt(numberOfPeople, 10) > selectedRoomData.capacity);
+
+              return (
               <Box>
-                {selectedRoomData && (
-                  <Alert severity="success" sx={{ mb: 2 }}>
-                    Selected room: {selectedRoomData.name} ({selectedRoomData.capacity} seats)
+                {selectedRoomData && !isCapacityExceeded && (
+                  <Alert severity="success" sx={{ mb: 2, borderRadius: 1.5 }}>
+                    Selected room: <strong>{selectedRoomData.name}</strong> ({selectedRoomData.capacity} seats max capacity)
+                  </Alert>
+                )}
+
+                {isCapacityExceeded && (
+                  <Alert
+                    severity="error"
+                    variant="filled"
+                    sx={{ mb: 2, borderRadius: 1.5, alignItems: 'center' }}
+                    action={
+                      <Button
+                        color="inherit"
+                        size="small"
+                        variant="outlined"
+                        onClick={() => {
+                          setSelectedRoom(null);
+                          setSelectedRoomData(null);
+                          setBookingStage('details');
+                        }}
+                        sx={{ fontWeight: 800, bgcolor: 'rgba(255,255,255,0.2)', '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' } }}
+                      >
+                        Choose Another Room
+                      </Button>
+                    }
+                  >
+                    <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                      ⚠️ Room Capacity Exceeded!
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', mt: 0.2 }}>
+                      This room allows <strong>{selectedRoomData.capacity} members</strong> only. In case you need to add more people ({numberOfPeople} participants), please choose another room.
+                    </Typography>
                   </Alert>
                 )}
                 {/* Meeting Type Selection */}
@@ -615,10 +704,13 @@ export default function BookingCalendarTab() {
                       label="Number of People *"
                       type="number"
                       value={numberOfPeople}
-                      onChange={(e) => setNumberOfPeople(e.target.value)}
+                      onChange={(e) => handleNumberOfPeopleChange(e.target.value)}
                       fullWidth
                       size="small"
                       inputProps={{ min: 1 }}
+                      placeholder="e.g. 4"
+                      error={isCapacityExceeded}
+                      helperText={isCapacityExceeded ? `Max capacity is ${selectedRoomData.capacity} members. Choose another room.` : undefined}
                       sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5, bgcolor: '#FAFAFA' } }}
                     />
                   </Grid>
@@ -651,20 +743,78 @@ export default function BookingCalendarTab() {
                   </Grid>
                 </Grid>
 
-                {/* Participant Names & Building/Floor in Compact 2-Column Grid */}
-                <Grid container spacing={1.2} sx={{ mb: 1.5 }}>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      label="Participant Names (optional)"
-                      value={participantNames}
-                      onChange={(e) => setParticipantNames(e.target.value)}
-                      fullWidth
-                      size="small"
-                      placeholder="e.g. John, Sarah"
-                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5, bgcolor: '#FAFAFA' } }}
-                    />
+                {/* Dynamic Numbered Participant Names */}
+                {participantList.length > 0 ? (
+                  <Box
+                    sx={{
+                      mb: 1.5,
+                      p: 1.5,
+                      bgcolor: '#F8FAFC',
+                      borderRadius: 1.5,
+                      border: '1px solid #E2E8F0',
+                    }}
+                  >
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontWeight: 700,
+                        color: '#1E293B',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        mb: 1,
+                      }}
+                    >
+                      <PeopleIcon sx={{ fontSize: 15, color: 'primary.main' }} />
+                      Participant List ({participantList.length} {participantList.length === 1 ? 'Person' : 'People'}):
+                    </Typography>
+
+                    <Grid container spacing={1}>
+                      {participantList.map((name, index) => {
+                        const exampleNames = ['John', 'Lee', 'Jon', 'Bob', 'Alice', 'David', 'Emma', 'Michael'];
+                        const placeholderName = exampleNames[index] || `Person ${index + 1}`;
+
+                        return (
+                          <Grid item xs={12} sm={participantList.length > 1 ? 6 : 12} key={index}>
+                            <TextField
+                              label={`${index + 1}. Participant Name`}
+                              value={name}
+                              onChange={(e) => handleParticipantNameChange(index, e.target.value)}
+                              fullWidth
+                              size="small"
+                              placeholder={`e.g. ${placeholderName}`}
+                              sx={{
+                                '& .MuiOutlinedInput-root': {
+                                  borderRadius: 1.5,
+                                  bgcolor: '#FFFFFF',
+                                },
+                              }}
+                            />
+                          </Grid>
+                        );
+                      })}
+                    </Grid>
+                  </Box>
+                ) : (
+                  /* Fallback single input if number of people is not entered yet */
+                  <Grid container spacing={1.2} sx={{ mb: 1.5 }}>
+                    <Grid item xs={12}>
+                      <TextField
+                        label="Participant Names (optional)"
+                        value={participantNames}
+                        onChange={(e) => setParticipantNames(e.target.value)}
+                        fullWidth
+                        size="small"
+                        placeholder="Enter Number of People above or type names: e.g. 1. John, 2. Lee"
+                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5, bgcolor: '#FAFAFA' } }}
+                      />
+                    </Grid>
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                )}
+
+                {/* Building / Floor Filter */}
+                <Grid container spacing={1.2} sx={{ mb: 1.5 }}>
+                  <Grid item xs={12}>
                     <TextField
                       label="Building / Floor (optional)"
                       value={building}
@@ -744,22 +894,31 @@ export default function BookingCalendarTab() {
                     borderRadius: 1.5,
                     background: (!startTime || !endTime || !numberOfPeople || !meetingPurpose)
                       ? undefined
+                      : isCapacityExceeded
+                      ? 'linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)'
                       : 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
                     boxShadow: (!startTime || !endTime || !numberOfPeople || !meetingPurpose)
                       ? 'none'
+                      : isCapacityExceeded
+                      ? '0 4px 12px rgba(220,38,38,0.3)'
                       : '0 4px 12px rgba(37,99,235,0.3)',
                     transition: 'all 0.2s ease',
                     '&:hover': {
-                      background: 'linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%)',
-                      boxShadow: '0 6px 16px rgba(37,99,235,0.4)',
+                      background: isCapacityExceeded
+                        ? 'linear-gradient(135deg, #B91C1C 0%, #991B1B 100%)'
+                        : 'linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%)',
+                      boxShadow: isCapacityExceeded
+                        ? '0 6px 16px rgba(220,38,38,0.4)'
+                        : '0 6px 16px rgba(37,99,235,0.4)',
                       transform: 'translateY(-1px)',
                     },
                   }}
                 >
-                  Search Available Rooms
+                  {isCapacityExceeded ? `Find Larger Rooms for ${numberOfPeople} People` : 'Search Available Rooms'}
                 </Button>
               </Box>
-            )}
+              );
+            })()}
 
             {bookingStage === 'select' && (
               <Box>
