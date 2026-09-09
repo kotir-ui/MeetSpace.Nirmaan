@@ -54,11 +54,9 @@ const TimeSlots = [
 
 const ApprovalStatuses = [
   { key: 'draft', label: 'Draft', color: '#757575' },
-  { key: 'pending_manager', label: 'Pending Manager Approval', color: '#ff9800' },
-  { key: 'manager_approved', label: 'Manager Approved', color: '#2196f3' },
-  { key: 'pending_hr', label: 'Pending HR Approval', color: '#ff9800' },
-  { key: 'hr_approved', label: 'HR Approved', color: '#2196f3' },
-  { key: 'confirmed', label: 'Room Booked', color: '#4caf50' },
+  { key: 'pending_approval', label: 'Booking Request', color: '#ff9800' },
+  { key: 'admin_approved', label: 'Admin Approval', color: '#2196f3' },
+  { key: 'confirmed', label: 'Booking Confirmation', color: '#4caf50' },
   { key: 'rejected', label: 'Rejected', color: '#f44336' },
 ];
 
@@ -199,6 +197,15 @@ export default function BookingCalendarTab() {
     fetchBookingsForMonth();
   }, [currentDate]);
 
+  const formatLocalDateString = (d) => {
+    if (!d) return '';
+    const dateObj = new Date(d);
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const fetchBookingsForMonth = async () => {
     try {
       const year = currentDate.getFullYear();
@@ -207,8 +214,8 @@ export default function BookingCalendarTab() {
       const lastDay = new Date(year, month + 1, 0);
       
       const response = await bookingApi.getBookings({
-        dateFrom: firstDay.toISOString().split('T')[0],
-        dateTo: lastDay.toISOString().split('T')[0],
+        dateFrom: formatLocalDateString(firstDay),
+        dateTo: formatLocalDateString(lastDay),
       });
       setBookings(response.data?.data || []);
     } catch (error) {
@@ -229,7 +236,7 @@ export default function BookingCalendarTab() {
     try {
       setLoading(true);
       const response = await bookingApi.getRooms({
-        date: selectedDate.toISOString().split('T')[0],
+        date: formatLocalDateString(selectedDate),
         startTime,
         endTime,
         capacity: numberOfPeople,
@@ -819,94 +826,99 @@ export default function BookingCalendarTab() {
                   Booking Summary
                 </Typography>
 
-                <Card sx={{ mb: 2, backgroundColor: '#f8f9fa' }}>
-                  <CardContent sx={{ p: 1.5 }}>
-                    <Grid container spacing={1.5}>
+                <Card sx={{ mb: 2.5, backgroundColor: '#f8fafc', border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+                  <CardContent sx={{ p: 2 }}>
+                    <Grid container spacing={2}>
                       <Grid item xs={6} sm={3}>
-                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.75rem' }}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.3 }}>
                           Date
                         </Typography>
-                        <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                        <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.9rem', color: 'text.primary' }}>
                           {selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </Typography>
                       </Grid>
                       <Grid item xs={6} sm={3}>
-                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.75rem' }}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.3 }}>
                           Time
                         </Typography>
-                        <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                        <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.9rem', color: 'text.primary' }}>
                           {startTime} – {endTime}
                         </Typography>
                       </Grid>
                       <Grid item xs={6} sm={3}>
-                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.75rem' }}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.3 }}>
                           Participants
                         </Typography>
-                        <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                        <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.9rem', color: 'text.primary' }}>
                           {numberOfPeople} People
                         </Typography>
                       </Grid>
                       <Grid item xs={6} sm={3}>
-                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.75rem' }}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.3 }}>
                           Type
                         </Typography>
-                        <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                        <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.9rem', color: 'text.primary' }}>
                           {meetingType === 'one-time' ? 'One-time' : 'Recurring'}
                         </Typography>
                       </Grid>
                     </Grid>
 
-                    <Divider sx={{ my: 1.5 }} />
+                    <Divider sx={{ my: 1.75 }} />
 
-                    <Grid container spacing={1.5}>
+                    <Grid container spacing={2}>
                       <Grid item xs={12} sm={6}>
-                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.75rem' }}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.3 }}>
                           Room
                         </Typography>
-                        <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                        <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.9rem', color: 'text.primary' }}>
                           {selectedRoomData.name}
                         </Typography>
                       </Grid>
                       <Grid item xs={12} sm={6}>
-                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.75rem' }}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.3 }}>
                           Organizer
                         </Typography>
-                        <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                        <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.9rem', color: 'text.primary' }}>
                           {user?.name}
                         </Typography>
                       </Grid>
                     </Grid>
 
-                    <Divider sx={{ my: 1.5 }} />
+                    <Divider sx={{ my: 1.75 }} />
 
                     <Box>
-                      <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.75rem' }}>
+                      <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.3 }}>
                         Purpose
                       </Typography>
-                      <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.9rem', color: 'text.primary' }}>
                         {meetingPurpose}
                       </Typography>
                     </Box>
 
-                    <Divider sx={{ my: 1.5 }} />
+                    <Divider sx={{ my: 1.75 }} />
 
                     {/* Approval Workflow */}
                     <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mb: 0.8, fontSize: '0.75rem' }}>
                       Approval Workflow
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, flexWrap: 'wrap' }}>
-                      {['pending_manager', 'manager_approved', 'pending_hr', 'hr_approved', 'confirmed'].map((status, idx) => (
-                        <React.Fragment key={status}>
+                      {[
+                        { label: 'Booking Request', color: '#ff9800' },
+                        { label: 'Admin Approval', color: '#2196f3' },
+                        { label: 'Booking Confirmation', color: '#4caf50' },
+                      ].map((step, idx) => (
+                        <React.Fragment key={step.label}>
                           <Chip
-                            label={ApprovalStatuses.find((s) => s.key === status)?.label}
+                            label={step.label}
                             sx={{
-                              backgroundColor: ApprovalStatuses.find((s) => s.key === status)?.color,
+                              backgroundColor: step.color,
                               color: 'white',
-                              fontSize: '0.65rem',
-                              height: 20,
+                              fontWeight: 600,
+                              fontSize: '0.72rem',
+                              height: 24,
                             }}
                           />
-                          {idx < 4 && <Typography sx={{ fontSize: '1rem', color: 'text.secondary' }}>→</Typography>}
+                          {idx < 2 && <Typography sx={{ fontSize: '1rem', color: 'text.secondary', fontWeight: 700 }}>→</Typography>}
                         </React.Fragment>
                       ))}
                     </Box>

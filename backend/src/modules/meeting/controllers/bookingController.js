@@ -54,6 +54,31 @@ export const getBookings = async (req, res) => {
     const userRole = req.user.role?.name || req.user.role;
     const { status, roomId, dateFrom, dateTo, departmentId } = req.query;
 
+    // Auto-complete expired/past bookings to free up rooms automatically
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:00`;
+
+    try {
+      await MeetingBooking.update(
+        { status: 'completed' },
+        {
+          where: {
+            status: 'confirmed',
+            [Op.or]: [
+              { meeting_date: { [Op.lt]: todayStr } },
+              {
+                meeting_date: todayStr,
+                end_time: { [Op.lte]: currentTimeStr },
+              },
+            ],
+          },
+        }
+      );
+    } catch (completeErr) {
+      console.warn('Auto-complete past bookings warning:', completeErr.message);
+    }
+
     let where = {};
     if (status) where.status = status;
     if (roomId) where.meeting_room_id = roomId;
@@ -95,6 +120,81 @@ export const getBookings = async (req, res) => {
     res.json({ success: true, data: bookings });
   } catch (error) {
     console.error('Error fetching bookings:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// Extend meeting booking duration
+export const extendBooking = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { extensionMinutes } = req.body;
+    const booking = await MeetingBooking.findByPk(id, {
+      include: [
+        { model: MeetingRoom, as: 'room' },
+        { model: User, as: 'organizer' },
+      ],
+    });
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    const minutesToAdd = parseInt(extensionMinutes, 10) || 30;
+    const parts = (booking.end_time || '10:00:00').split(':').map(Number);
+    let totalMinutes = parts[0] * 60 + parts[1] + minutesToAdd;
+    const newEndH = String(Math.floor(totalMinutes / 60)).padStart(2, '0');
+    const newEndM = String(totalMinutes % 60).padStart(2, '0');
+    const newEndTime = `${newEndH}:${newEndM}:00`;
+
+    // Check conflict for the requested extension window
+    const conflict = await MeetingBooking.findOne({
+      where: {
+        meeting_room_id: booking.meeting_room_id,
+        meeting_date: booking.meeting_date,
+        id: { [Op.ne]: booking.id },
+        status: { [Op.notIn]: ['cancelled', 'rejected', 'completed'] },
+        start_time: { [Op.lt]: newEndTime },
+        end_time: { [Op.gt]: booking.end_time },
+      },
+    });
+
+    if (conflict) {
+      return res.status(409).json({
+        success: false,
+        conflict: true,
+        message: `Cannot extend room. Another reservation starts at ${conflict.start_time.slice(0, 5)}.`,
+      });
+    }
+
+    const previousEndTime = booking.end_time;
+    booking.end_time = newEndTime;
+    booking.status = 'confirmed';
+    await booking.save();
+
+    await logStatusChange(
+      booking.id,
+      booking.status,
+      booking.status,
+      req.user.id,
+      `Time extended by ${minutesToAdd} mins from ${previousEndTime} to ${newEndTime}`
+    );
+
+    await createNotification(
+      booking.organizer_id,
+      '⏰ Meeting Time Extended',
+      `Your booking in "${booking.room?.name}" has been extended until ${newEndTime.slice(0, 5)}.`,
+      'success',
+      booking.id
+    );
+
+    res.json({
+      success: true,
+      message: `Meeting successfully extended by ${minutesToAdd} minutes until ${newEndTime.slice(0, 5)}!`,
+      data: booking,
+    });
+  } catch (error) {
+    console.error('Error extending booking:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 };

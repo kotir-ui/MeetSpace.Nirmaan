@@ -16,13 +16,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Alert,
   Snackbar,
-  Divider,
 } from '@mui/material';
 import {
   MeetingRoom as MeetingRoomIcon,
@@ -31,10 +26,7 @@ import {
   Pending as PendingIcon,
   CalendarMonth as CalendarMonthIcon,
   People as PeopleIcon,
-  LocationOn as LocationOnIcon,
-  LocalOffer as LocalOfferIcon,
   AccessTime as AccessTimeIcon,
-  Close as CloseIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import * as bookingApi from '../../api/booking.js';
@@ -70,6 +62,14 @@ const DEFAULT_ROOMS = [
   { id: 6, name: 'Chanakya Strategy Room', room_number: 'MR-202', building: 'Main Block', floor: 2, location: '2nd Floor - North Wing', capacity: 12, status: 'available' },
 ];
 
+const getTodayDateString = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function BookingDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -77,22 +77,50 @@ export default function BookingDashboard() {
   const [rooms, setRooms] = useState(DEFAULT_ROOMS);
   const [loading, setLoading] = useState(true);
   const [todayBookings, setTodayBookings] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const dateString = selectedDate.toISOString().split('T')[0];
+  const [dateString, setDateString] = useState(() => getTodayDateString());
 
-  // Quick Booking Dialog State
-  const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
-  const [selectedRoomForBooking, setSelectedRoomForBooking] = useState(null);
-  const [selectedStartSlot, setSelectedStartSlot] = useState('');
-  const [selectedEndSlot, setSelectedEndSlot] = useState('');
-  const [bookingTitle, setBookingTitle] = useState('');
-  const [bookingParticipants, setBookingParticipants] = useState('2');
-  const [submitting, setSubmitting] = useState(false);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  // 5-Minute Warning & Extension Alert State
+  const [activeEndingMeeting, setActiveEndingMeeting] = useState(null);
+  const [extensionModalOpen, setExtensionModalOpen] = useState(false);
+  const [extending, setExtending] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
   useEffect(() => {
     fetchDashboard();
   }, [dateString]);
+
+  // Periodic check (every 10s) for meetings ending in <= 5 minutes
+  useEffect(() => {
+    const checkEndingMeetings = () => {
+      const isToday = dateString === getTodayDateString();
+      if (!isToday) return;
+
+      const now = new Date();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      const myBooking = (todayBookings || []).find((b) => {
+        if (['cancelled', 'rejected', 'completed'].includes(b.status)) return false;
+        const isMyBooking = (b.organizer_id && user && b.organizer_id === user.id) ||
+                            (b.organizer?.id && user && b.organizer.id === user.id) ||
+                            (b.organizer?.email && user && b.organizer.email === user.email);
+        if (!isMyBooking) return false;
+
+        const bStart = parseTimeToMinutes(b.start_time);
+        const bEnd = parseTimeToMinutes(b.end_time);
+        const minutesLeft = bEnd - currentMinutes;
+
+        return currentMinutes >= bStart && minutesLeft > 0 && minutesLeft <= 5;
+      });
+
+      if (myBooking && (!activeEndingMeeting || activeEndingMeeting.id !== myBooking.id)) {
+        setActiveEndingMeeting(myBooking);
+        setExtensionModalOpen(true);
+      }
+    };
+
+    checkEndingMeetings();
+    const interval = setInterval(checkEndingMeetings, 10000);
+    return () => clearInterval(interval);
+  }, [todayBookings, user, dateString]);
 
   const fetchDashboard = async () => {
     try {
@@ -129,21 +157,60 @@ export default function BookingDashboard() {
       const ampm = match[3]?.toUpperCase();
       if (ampm === 'PM' && h < 12) h += 12;
       if (ampm === 'AM' && h === 12) h = 0;
+      // If hour is 1 to 6 without explicit AM/PM in working schedule (9 AM - 6 PM), treat as PM
+      if (!ampm && h >= 1 && h <= 6) h += 12;
       return h * 60 + m;
     }
     const parts = str.split(':');
-    return (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
+    let h = parseInt(parts[0], 10) || 0;
+    if (h >= 1 && h <= 6) h += 12;
+    return h * 60 + (parseInt(parts[1], 10) || 0);
   };
 
-  const getBookingForSlot = (roomId, slot) => {
+  const getBookingForSlot = (roomId, slot, roomName = null) => {
+    const isToday = dateString === getTodayDateString();
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
     return todayBookings.find((booking) => {
       const bookingRoomId = booking.meeting_room_id || booking.room_id || booking.room?.id;
-      if (String(bookingRoomId) !== String(roomId)) return false;
+      const matchesRoom = (bookingRoomId && String(bookingRoomId) === String(roomId)) ||
+                          (booking.room?.name && roomName && booking.room.name.toLowerCase().trim() === roomName.toLowerCase().trim()) ||
+                          (booking.room_name && roomName && booking.room_name.toLowerCase().trim() === roomName.toLowerCase().trim());
+
+      if (!matchesRoom) return false;
       if (['cancelled', 'rejected'].includes(booking.status)) return false;
+
       const bStart = parseTimeToMinutes(booking.start_time);
       const bEnd = parseTimeToMinutes(booking.end_time);
+
+      // Auto-available: if today and meeting ended, freed up
+      if (isToday && currentMinutes >= bEnd) {
+        return false;
+      }
+
       return bStart < slot.endMin && bEnd > slot.startMin;
     });
+  };
+
+  const handleExtendBooking = async (minutes) => {
+    if (!activeEndingMeeting) return;
+    try {
+      setExtending(true);
+      const res = await bookingApi.extendBooking(activeEndingMeeting.id, { extensionMinutes: minutes });
+      setSnackbar({ open: true, message: res.data?.message || `Meeting extended by ${minutes} minutes!`, severity: 'success' });
+      setExtensionModalOpen(false);
+      setActiveEndingMeeting(null);
+      fetchDashboard();
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: err.response?.data?.message || 'Cannot extend room: next time slot is already reserved.',
+        severity: 'error',
+      });
+    } finally {
+      setExtending(false);
+    }
   };
 
   const handleRedirectToBooking = (room, slot = null) => {
@@ -151,7 +218,6 @@ export default function BookingDashboard() {
     const end = slot ? slot.end : '09:30';
     navigate(`/meeting-room/book?date=${dateString}&roomId=${room.id}&startTime=${start}&endTime=${end}`);
   };
-
 
   if (loading) {
     return (
@@ -188,8 +254,59 @@ export default function BookingDashboard() {
     </Card>
   );
 
+  // Calculate aggregate slot metrics across all rooms for the selected date
+  const totalSlotsCount = (rooms || []).length * TIME_SLOTS.length;
+  let totalBookedSlotsCount = 0;
+  let totalPendingSlotsCount = 0;
+
+  (todayBookings || []).forEach((b) => {
+    if (['pending_manager', 'pending_admin', 'pending_department_head', 'pending_hr', 'pending'].includes(b.approval_status || b.status)) {
+      totalPendingSlotsCount++;
+    }
+  });
+  if (totalPendingSlotsCount === 0 && dashboard?.pendingApprovals) {
+    totalPendingSlotsCount = dashboard.pendingApprovals;
+  }
+
+  (rooms || []).forEach((r) => {
+    TIME_SLOTS.forEach((slot) => {
+      if (getBookingForSlot(r.id, slot)) {
+        totalBookedSlotsCount++;
+      }
+    });
+  });
+  const totalAvailableSlotsCount = Math.max(0, totalSlotsCount - totalBookedSlotsCount);
+
   return (
     <Box sx={{ pb: 4 }}>
+      {/* 5-Minute Time Up Alert Banner */}
+      {activeEndingMeeting && (
+        <Alert
+          severity="warning"
+          variant="filled"
+          icon={<AccessTimeIcon sx={{ fontSize: 24 }} />}
+          action={
+            <Button
+              color="inherit"
+              size="small"
+              variant="outlined"
+              onClick={() => setExtensionModalOpen(true)}
+              sx={{ fontWeight: 700, bgcolor: 'rgba(255,255,255,0.2)', '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' } }}
+            >
+              Extend Time
+            </Button>
+          }
+          sx={{ mb: 3, borderRadius: 2, alignItems: 'center' }}
+        >
+          <Typography variant="body2" sx={{ fontWeight: 700 }}>
+            ⏰ Meeting Ending in 5 Minutes!
+          </Typography>
+          <Typography variant="caption" sx={{ display: 'block', opacity: 0.95 }}>
+            Your meeting &quot;{activeEndingMeeting.title || 'Session'}&quot; in {activeEndingMeeting.room?.name || 'Room'} ends at {activeEndingMeeting.end_time?.slice(0, 5)}. Click Extend Time if you need more time.
+          </Typography>
+        </Alert>
+      )}
+
       <Box sx={{ mb: 3 }}>
         <Typography variant="h5" sx={{ fontWeight: 800 }}>Room Schedule & Available Slots</Typography>
         <Typography variant="body2" color="text.secondary">
@@ -198,17 +315,23 @@ export default function BookingDashboard() {
       </Box>
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={4} lg={2}>
           <StatCard title="Total Rooms" value={dashboard?.totalRooms || rooms.length || 0} icon={MeetingRoomIcon} color="#2196f3" />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard title="Available Now" value={dashboard?.availableNow || 0} icon={CheckCircleIcon} color="#4caf50" />
+        <Grid item xs={12} sm={6} md={4} lg={2}>
+          <StatCard title="Available Now" value={dashboard?.availableNow || rooms.length || 0} icon={CheckCircleIcon} color="#4caf50" />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard title="Today's Bookings" value={todayBookings.filter((b) => !['cancelled', 'rejected'].includes(b.status)).length} icon={EventNoteIcon} color="#ff9800" />
+        <Grid item xs={12} sm={6} md={4} lg={2}>
+          <StatCard title="Total Slots" value={totalSlotsCount} icon={AccessTimeIcon} color="#6366f1" />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard title="Pending Approvals" value={dashboard?.pendingApprovals || 0} icon={PendingIcon} color="#f44336" />
+        <Grid item xs={12} sm={6} md={4} lg={2}>
+          <StatCard title="Booked Slots" value={totalBookedSlotsCount} icon={EventNoteIcon} color="#ff9800" />
+        </Grid>
+        <Grid item xs={12} sm={6} md={4} lg={2}>
+          <StatCard title="Free Slots" value={totalAvailableSlotsCount} icon={CheckCircleIcon} color="#059669" />
+        </Grid>
+        <Grid item xs={12} sm={6} md={4} lg={2}>
+          <StatCard title="Pending Slots" value={totalPendingSlotsCount} icon={PendingIcon} color="#f44336" />
         </Grid>
       </Grid>
 
@@ -218,7 +341,15 @@ export default function BookingDashboard() {
             <Box>
               <Typography sx={{ fontWeight: 800 }}>Meeting Rooms & Time Slots</Typography>
               <Typography variant="body2" color="text.secondary">
-                {selectedDate.toLocaleDateString('en-IN', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                {(() => {
+                  try {
+                    const [y, m, d] = dateString.split('-').map(Number);
+                    const dateObj = new Date(y, m - 1, d);
+                    return dateObj.toLocaleDateString('en-IN', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+                  } catch {
+                    return dateString;
+                  }
+                })()}
               </Typography>
             </Box>
           </Stack>
@@ -227,7 +358,11 @@ export default function BookingDashboard() {
               label="Select date"
               type="date"
               value={dateString}
-              onChange={(event) => setSelectedDate(new Date(`${event.target.value}T00:00:00`))}
+              onChange={(event) => {
+                if (event.target.value) {
+                  setDateString(event.target.value);
+                }
+              }}
               size="small"
               InputLabelProps={{ shrink: true }}
               sx={{ minWidth: 170 }}
@@ -245,11 +380,11 @@ export default function BookingDashboard() {
               {rooms.map((room) => {
                 const unavailable = room.status === 'inactive' || room.status === 'under_maintenance' || room.room_status === 'disabled' || room.room_status === 'maintenance';
                 
-                // Calculate slot availability counts
+                // Calculate slot availability counts per room
                 let availableSlotsCount = 0;
                 let bookedSlotsCount = 0;
                 TIME_SLOTS.forEach((slot) => {
-                  const booking = getBookingForSlot(room.id, slot);
+                  const booking = getBookingForSlot(room.id, slot, room.name);
                   if (booking) bookedSlotsCount++;
                   else availableSlotsCount++;
                 });
@@ -260,13 +395,10 @@ export default function BookingDashboard() {
                       elevation={0}
                       sx={{
                         border: '1px solid',
-                        borderColor: 'divider',
+                        borderColor: unavailable ? 'error.light' : 'divider',
                         borderRadius: 2,
-                        height: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
-                        transition: 'all 0.2s ease',
+                        bgcolor: unavailable ? 'action.hover' : 'background.paper',
+                        transition: 'all 0.2s',
                         '&:hover': {
                           boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
                           borderColor: 'primary.main',
@@ -290,36 +422,82 @@ export default function BookingDashboard() {
                                   label={`${room.capacity} Seats`}
                                   size="small"
                                   variant="outlined"
-                                  sx={{ fontWeight: 600, fontSize: 11, height: 22 }}
+                                  sx={{ height: 22, fontSize: '0.72rem', fontWeight: 600 }}
                                 />
+                                {room.location && (
+                                  <Chip
+                                    label={room.location}
+                                    size="small"
+                                    variant="outlined"
+                                    sx={{ height: 22, fontSize: '0.72rem', color: 'text.secondary' }}
+                                  />
+                                )}
                               </Box>
+                              <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.3 }}>
+                                {room.room_type ? room.room_type.replace('_', ' ').toUpperCase() : 'MEETING ROOM'}
+                              </Typography>
                             </Box>
                           </Box>
+
+                          {/* Room Status Badge */}
                           <Chip
-                            label={unavailable ? 'Maintenance' : `${availableSlotsCount} Free Slots`}
+                            label={unavailable ? 'Unavailable' : bookedSlotsCount === TIME_SLOTS.length ? 'Fully Booked' : 'Available'}
                             size="small"
-                            sx={{
-                              fontWeight: 700,
-                              fontSize: 11,
-                              bgcolor: unavailable ? '#FEE2E2' : '#DCFCE7',
-                              color: unavailable ? '#B91C1C' : '#166534',
-                            }}
+                            color={unavailable ? 'default' : bookedSlotsCount === TIME_SLOTS.length ? 'error' : 'success'}
+                            sx={{ fontWeight: 700, fontSize: '0.75rem' }}
                           />
                         </Stack>
 
-                        {/* Room Meta Badges */}
-                        <Stack direction="row" spacing={1} sx={{ mb: 1.5, flexWrap: 'wrap', gap: 0.5 }}>
-                          <Chip icon={<LocationOnIcon sx={{ fontSize: '14px !important' }} />} label={room.location || room.room_number || 'Floor ' + room.floor} size="small" variant="outlined" sx={{ fontWeight: 600, fontSize: 12 }} />
-                          {room.room_type && (
-                            <Chip icon={<LocalOfferIcon sx={{ fontSize: '13px !important' }} />} label={room.room_type} size="small" variant="outlined" sx={{ fontWeight: 600, fontSize: 12 }} />
-                          )}
-                        </Stack>
+                        {/* Room Wise Slot Breakdown: Total vs Booked vs Free */}
+                        <Box
+                          sx={{
+                            p: 1.2,
+                            mb: 2,
+                            borderRadius: 1.5,
+                            bgcolor: '#F8FAFC',
+                            border: '1px solid #E2E8F0',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            flexWrap: 'wrap',
+                            gap: 1,
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                            <Chip
+                              label={`Total: ${TIME_SLOTS.length} Slots`}
+                              size="small"
+                              sx={{ bgcolor: '#E0E7FF', color: '#3730A3', fontWeight: 700, fontSize: '0.73rem', height: 24 }}
+                            />
+                            <Chip
+                              label={`Booked: ${bookedSlotsCount}`}
+                              size="small"
+                              sx={{ bgcolor: '#FEE2E2', color: '#991B1B', fontWeight: 700, fontSize: '0.73rem', height: 24 }}
+                            />
+                            <Chip
+                              label={`Free: ${availableSlotsCount}`}
+                              size="small"
+                              sx={{ bgcolor: '#DCFCE7', color: '#166534', fontWeight: 700, fontSize: '0.73rem', height: 24 }}
+                            />
+                          </Box>
+                          <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>
+                            {bookedSlotsCount}/{TIME_SLOTS.length} Slots Booked
+                          </Typography>
+                        </Box>
 
-                        <Divider sx={{ my: 1.5 }} />
-
-                        {/* Time Slots Schedule Section */}
+                        {/* Available Slots Grid */}
                         <Box sx={{ mb: 1 }}>
-                          <Typography variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', color: 'text.secondary', letterSpacing: 0.5, display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontWeight: 700,
+                              color: 'text.secondary',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 0.5,
+                              mb: 1,
+                            }}
+                          >
                             <AccessTimeIcon sx={{ fontSize: 14 }} /> Available Time Slots (Click to Book):
                           </Typography>
 
@@ -334,9 +512,9 @@ export default function BookingDashboard() {
                             }}
                           >
                             {TIME_SLOTS.map((slot) => {
-                              const booking = getBookingForSlot(room.id, slot);
+                              const booking = getBookingForSlot(room.id, slot, room.name);
                               const isBooked = !!booking;
-                              const isPending = booking?.status === 'pending_manager' || booking?.status === 'pending_hr';
+                              const isPending = booking?.status === 'pending_department_head' || booking?.status === 'pending_hr' || booking?.status === 'pending_manager' || booking?.status === 'pending';
 
                               return (
                                 <Tooltip
@@ -345,7 +523,7 @@ export default function BookingDashboard() {
                                     unavailable
                                       ? 'Room is currently unavailable'
                                       : isBooked
-                                      ? `Booked: ${booking.title || 'Meeting'} (${booking.user?.name || booking.user?.email || 'User'})`
+                                      ? `Booked: ${booking.title || 'Meeting'} (${booking.user?.name || booking.user?.email || booking.organizer?.name || 'User'})`
                                       : `Click to book ${slot.label} - ${slot.end}`
                                   }
                                 >
@@ -361,12 +539,12 @@ export default function BookingDashboard() {
                                       borderRadius: 1,
                                       textAlign: 'center',
                                       fontSize: '0.75rem',
-                                      fontWeight: 600,
+                                      fontWeight: 700,
                                       cursor: unavailable || isBooked ? 'not-allowed' : 'pointer',
-                                      border: '1px solid',
+                                      border: '1.5px solid',
                                       borderColor: isBooked
-                                        ? isPending ? '#FDE68A' : '#FECACA'
-                                        : '#BBF7D0',
+                                        ? isPending ? '#F59E0B' : '#EF4444'
+                                        : '#86EFAC',
                                       bgcolor: isBooked
                                         ? isPending ? '#FEF3C7' : '#FEE2E2'
                                         : '#F0FDF4',
@@ -376,14 +554,14 @@ export default function BookingDashboard() {
                                       transition: 'all 0.15s ease',
                                       '&:hover': !unavailable && !isBooked ? {
                                         bgcolor: '#DCFCE7',
-                                        borderColor: '#4ADE80',
+                                        borderColor: '#22C55E',
                                         transform: 'scale(1.04)',
                                         boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
                                       } : {},
                                     }}
                                   >
                                     <div>{slot.label}</div>
-                                    <div style={{ fontSize: '0.65rem', opacity: 0.85 }}>
+                                    <div style={{ fontSize: '0.65rem', fontWeight: 800 }}>
                                       {isBooked ? (isPending ? 'Pending' : 'Booked') : 'Available'}
                                     </div>
                                   </Box>
@@ -420,9 +598,78 @@ export default function BookingDashboard() {
           )}
         </Box>
       </Paper>
+
+      {/* Extend Meeting Time Dialog */}
+      <Dialog
+        open={extensionModalOpen}
+        onClose={() => setExtensionModalOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 2.5, p: 1 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <AccessTimeIcon color="warning" />
+          Extend Meeting Time
+        </DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="body2" sx={{ mb: 1.5, color: 'text.secondary' }}>
+            Your meeting in <strong>{activeEndingMeeting?.room?.name || 'Meeting Room'}</strong> is scheduled to end at <strong>{activeEndingMeeting?.end_time?.slice(0, 5)}</strong>.
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 2, fontWeight: 600 }}>
+            Choose an extension duration to keep using this room:
+          </Typography>
+
+          <Stack spacing={1.5}>
+            <Button
+              variant="outlined"
+              color="primary"
+              disabled={extending}
+              onClick={() => handleExtendBooking(15)}
+              sx={{ justifyContent: 'space-between', py: 1, textTransform: 'none', fontWeight: 700 }}
+            >
+              <span>Extend +15 Minutes</span>
+              <Chip label="+15 min" size="small" color="primary" />
+            </Button>
+            <Button
+              variant="outlined"
+              color="primary"
+              disabled={extending}
+              onClick={() => handleExtendBooking(30)}
+              sx={{ justifyContent: 'space-between', py: 1, textTransform: 'none', fontWeight: 700 }}
+            >
+              <span>Extend +30 Minutes</span>
+              <Chip label="+30 min" size="small" color="primary" />
+            </Button>
+            <Button
+              variant="outlined"
+              color="primary"
+              disabled={extending}
+              onClick={() => handleExtendBooking(60)}
+              sx={{ justifyContent: 'space-between', py: 1, textTransform: 'none', fontWeight: 700 }}
+            >
+              <span>Extend +60 Minutes (1 Hour)</span>
+              <Chip label="+60 min" size="small" color="primary" />
+            </Button>
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 2, py: 1.5 }}>
+          <Button onClick={() => setExtensionModalOpen(false)} disabled={extending} sx={{ textTransform: 'none' }}>
+            Dismiss / End on Time
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar Alerts */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={5000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert severity={snackbar.severity} sx={{ width: '100%', borderRadius: 2 }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
-
-
-

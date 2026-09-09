@@ -132,13 +132,22 @@ const BookingDetailsModal = ({ open, booking, onClose, onUpdate }) => {
                   <TableCell>{booking.room?.capacity} people</TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 600 }}>Organizer</TableCell>
-                  <TableCell>{booking.organizer?.name}</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Employee / Requester</TableCell>
+                  <TableCell>
+                    {booking.organizer?.name || 'User'}
+                    {booking.organizer?.email && <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary' }}>{booking.organizer.email}</Typography>}
+                  </TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 600 }}>Department</TableCell>
-                  <TableCell>{booking.department?.name || 'N/A'}</TableCell>
+                  <TableCell>{booking.department?.name || 'General'}</TableCell>
                 </TableRow>
+                {booking.department?.head && (
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 600 }}>Department Head</TableCell>
+                    <TableCell>{booking.department.head.name || booking.department.head.email}</TableCell>
+                  </TableRow>
+                )}
                 <TableRow>
                   <TableCell sx={{ fontWeight: 600 }}>Meeting Type</TableCell>
                   <TableCell>{booking.meeting_type?.replace(/_/g, ' ')}</TableCell>

@@ -39,14 +39,37 @@ export const getPendingApprovals = async (req, res) => {
   try {
     const userId = req.user.id;
     const userRole = req.user?.role?.name || '';
-    const isAdmin = ['Super Admin', 'Admin'].includes(userRole);
+    const isAdminOrManager = ['Super Admin', 'Admin', 'Department Manager', 'Manager', 'superadmin', 'admin', 'manager'].some(
+      (r) => userRole.toLowerCase().includes(r.toLowerCase())
+    );
     const { approverType } = req.query;
+
+    // 1. Synchronize any pending MeetingBooking rows so they always have an ApprovalRequest record
+    const pendingBookings = await MeetingBooking.findAll({
+      where: {
+        status: { [Op.in]: ['pending_department_head', 'pending_hr', 'pending', 'pending_manager'] },
+      },
+    });
+
+    for (const pb of pendingBookings) {
+      const existingReq = await ApprovalRequest.findOne({
+        where: { meeting_booking_id: pb.id, status: 'pending' },
+      });
+      if (!existingReq) {
+        await ApprovalRequest.create({
+          meeting_booking_id: pb.id,
+          approver_id: userId,
+          approver_type: pb.status === 'pending_department_head' ? 'department_head' : 'hr',
+          status: 'pending',
+        });
+      }
+    }
 
     let where = {
       status: 'pending',
     };
 
-    if (!isAdmin) {
+    if (!isAdminOrManager) {
       where.approver_id = userId;
     }
 
@@ -61,8 +84,14 @@ export const getPendingApprovals = async (req, res) => {
           model: MeetingBooking,
           as: 'booking',
           include: [
-            { model: User, as: 'organizer', attributes: ['id', 'name', 'email'] },
-            { model: Department, as: 'department', attributes: ['id', 'name'] },
+            { model: User, as: 'organizer', attributes: ['id', 'name', 'email', 'mobile', 'designation'] },
+            {
+              model: Department,
+              as: 'department',
+              attributes: ['id', 'name', 'code'],
+              include: [{ model: User, as: 'head', attributes: ['id', 'name', 'email'] }],
+            },
+            { model: MeetingRoom, as: 'room', attributes: ['id', 'name', 'capacity', 'location', 'room_number'] },
           ],
         },
         { model: User, as: 'approver', attributes: ['id', 'name', 'email'] },
@@ -70,7 +99,22 @@ export const getPendingApprovals = async (req, res) => {
       order: [['created_at', 'DESC']],
     });
 
-    res.json({ success: true, data: approvals });
+    // Filter out duplicate approval records for same booking and ensure booking is valid
+    const seenBookingIds = new Set();
+    const validApprovals = [];
+
+    for (const app of approvals) {
+      const bStatus = app.booking?.status;
+      if (!app.booking || ['confirmed', 'cancelled', 'rejected', 'completed'].includes(bStatus)) {
+        continue;
+      }
+      if (!seenBookingIds.has(app.meeting_booking_id)) {
+        seenBookingIds.add(app.meeting_booking_id);
+        validApprovals.push(app);
+      }
+    }
+
+    res.json({ success: true, data: validApprovals });
   } catch (error) {
     console.error('Error fetching pending approvals:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -138,16 +182,33 @@ export const approveBooking = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
     const userRole = req.user?.role?.name || '';
-    const isAdmin = ['Super Admin', 'Admin'].includes(userRole);
+    const isAdminOrManager = ['Super Admin', 'Admin', 'Department Manager', 'Manager', 'superadmin', 'admin', 'manager'].some(
+      (r) => userRole.toLowerCase().includes(r.toLowerCase())
+    );
     const { comments, alternateRoomId, roomId } = req.body;
 
-    const approval = await ApprovalRequest.findByPk(id);
+    let approval = await ApprovalRequest.findByPk(id);
+    if (!approval) {
+      approval = await ApprovalRequest.findOne({ where: { meeting_booking_id: id, status: 'pending' } });
+    }
+    if (!approval) {
+      const b = await MeetingBooking.findByPk(id);
+      if (b) {
+        approval = await ApprovalRequest.create({
+          meeting_booking_id: b.id,
+          approver_id: userId,
+          approver_type: 'hr',
+          status: 'pending',
+        });
+      }
+    }
+
     if (!approval) {
       return res.status(404).json({ success: false, error: 'Approval request not found' });
     }
 
-    // Check if user is the approver or an admin
-    if (approval.approver_id !== userId && !isAdmin) {
+    // Check if user is the approver or an admin/manager
+    if (approval.approver_id !== userId && !isAdminOrManager) {
       return res.status(403).json({ success: false, error: 'Not authorized to approve this request' });
     }
 
@@ -420,16 +481,33 @@ export const rejectBooking = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
     const userRole = req.user?.role?.name || '';
-    const isAdmin = ['Super Admin', 'Admin'].includes(userRole);
+    const isAdminOrManager = ['Super Admin', 'Admin', 'Department Manager', 'Manager', 'superadmin', 'admin', 'manager'].some(
+      (r) => userRole.toLowerCase().includes(r.toLowerCase())
+    );
     const { comments } = req.body;
 
-    const approval = await ApprovalRequest.findByPk(id);
+    let approval = await ApprovalRequest.findByPk(id);
+    if (!approval) {
+      approval = await ApprovalRequest.findOne({ where: { meeting_booking_id: id, status: 'pending' } });
+    }
+    if (!approval) {
+      const b = await MeetingBooking.findByPk(id);
+      if (b) {
+        approval = await ApprovalRequest.create({
+          meeting_booking_id: b.id,
+          approver_id: userId,
+          approver_type: 'hr',
+          status: 'pending',
+        });
+      }
+    }
+
     if (!approval) {
       return res.status(404).json({ success: false, error: 'Approval request not found' });
     }
 
-    // Check if user is the approver or admin
-    if (approval.approver_id !== userId && !isAdmin) {
+    // Check if user is the approver or admin/manager
+    if (approval.approver_id !== userId && !isAdminOrManager) {
       return res.status(403).json({ success: false, error: 'Not authorized to reject this request' });
     }
 

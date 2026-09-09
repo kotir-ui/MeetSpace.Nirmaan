@@ -291,3 +291,164 @@ export const sendBookingRejectedMail = async ({
     });
   }
 };
+
+/**
+ * 4. Email to User & Manager when booking is cancelled
+ */
+export const sendBookingCancelledMail = async ({
+  userEmail,
+  userName = 'User',
+  managerEmail,
+  cancellerName = 'User',
+  roomName,
+  bookingNumber,
+  title,
+  meetingDate,
+  startTime,
+  endTime,
+  reason = 'Cancelled by organizer',
+}) => {
+  const subject = `🚫 Booking Cancelled: #${bookingNumber} - ${roomName}`;
+
+  const html = `
+    <div style="font-family: Arial, Helvetica, sans-serif; background-color: #f4f6f9; padding: 25px; color: #333;">
+      <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.08);">
+        <div style="background: #64748b; padding: 20px; text-align: center; color: #ffffff;">
+          <h2 style="margin: 0; font-size: 20px; letter-spacing: 0.5px;">Booking Cancelled</h2>
+          <p style="margin: 5px 0 0 0; font-size: 13px; color: #cbd5e1;">Booking #${bookingNumber}</p>
+        </div>
+
+        <div style="padding: 24px;">
+          <p style="font-size: 15px; margin-top: 0;">Hello,</p>
+          <p style="font-size: 14px; line-height: 1.5; color: #475569;">
+            The meeting booking for <strong>${roomName}</strong> on <strong>${meetingDate} (${startTime} - ${endTime})</strong> has been cancelled by <strong>${cancellerName}</strong>.
+          </p>
+
+          <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background: #f8fafc; border-radius: 6px; overflow: hidden;">
+            <tr>
+              <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: bold; color: #64748b; width: 35%;">Meeting Title</td>
+              <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; font-size: 13px; color: #0f172a;">${title || 'Meeting'}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: bold; color: #64748b;">Released Room</td>
+              <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; font-size: 13px; color: #0f172a;">${roomName}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 14px; font-size: 13px; font-weight: bold; color: #64748b;">Status</td>
+              <td style="padding: 10px 14px; font-size: 13px; color: #ef4444; font-weight: bold;">CANCELLED (Slots Freed)</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="background: #f1f5f9; padding: 14px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0;">
+          MeetSpace Nirmaan - Automated Notification System
+        </div>
+      </div>
+    </div>
+  `;
+
+  const recipients = new Set();
+  if (userEmail) recipients.add(userEmail);
+  if (managerEmail) recipients.add(managerEmail);
+
+  if (recipients.size > 0) {
+    return await sendMail({
+      to: Array.from(recipients),
+      subject,
+      html,
+      text: `Booking #${bookingNumber} for ${roomName} on ${meetingDate} was cancelled.`,
+    });
+  }
+};
+
+/**
+ * 5. Email when meeting is extended
+ */
+export const sendBookingExtendedMail = async ({
+  userEmail,
+  userName = 'User',
+  roomName,
+  bookingNumber,
+  title,
+  extensionMinutes,
+  newEndTime,
+}) => {
+  const subject = `⏱️ Meeting Extended: #${bookingNumber} - ${roomName}`;
+
+  const html = `
+    <div style="font-family: Arial, Helvetica, sans-serif; background-color: #f4f6f9; padding: 25px; color: #333;">
+      <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.08);">
+        <div style="background: #d97706; padding: 20px; text-align: center; color: #ffffff;">
+          <h2 style="margin: 0; font-size: 20px; letter-spacing: 0.5px;">Meeting Time Extended</h2>
+          <p style="margin: 5px 0 0 0; font-size: 13px; color: #fef3c7;">+${extensionMinutes} Minutes Added</p>
+        </div>
+
+        <div style="padding: 24px;">
+          <p style="font-size: 15px; margin-top: 0;">Hello <strong>${userName}</strong>,</p>
+          <p style="font-size: 14px; line-height: 1.5; color: #475569;">
+            Your session in <strong>${roomName}</strong> for <strong>"${title}"</strong> has been extended by <strong>${extensionMinutes} minutes</strong>.
+          </p>
+
+          <p style="font-size: 14px; color: #0f172a;">
+            <strong>New End Time:</strong> <span style="color: #d97706; font-weight: bold;">${newEndTime}</span>
+          </p>
+        </div>
+
+        <div style="background: #f1f5f9; padding: 14px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0;">
+          MeetSpace Nirmaan - Automated Notification System
+        </div>
+      </div>
+    </div>
+  `;
+
+  if (userEmail) {
+    return await sendMail({
+      to: userEmail,
+      subject,
+      html,
+      text: `Meeting in ${roomName} extended by ${extensionMinutes} min until ${newEndTime}.`,
+    });
+  }
+};
+
+/**
+ * 6. Send instant Test Email to verify SMTP configuration
+ */
+export const sendTestEmail = async (targetEmail) => {
+  const subject = `🔔 MeetSpace Email Notification System Test`;
+
+  const html = `
+    <div style="font-family: Arial, Helvetica, sans-serif; background-color: #f4f6f9; padding: 25px; color: #333;">
+      <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.08);">
+        <div style="background: #1e3a8a; padding: 20px; text-align: center; color: #ffffff;">
+          <h2 style="margin: 0; font-size: 20px; letter-spacing: 0.5px;">MeetSpace Email Notification Test</h2>
+          <p style="margin: 5px 0 0 0; font-size: 13px; color: #bfdbfe;">System Verification</p>
+        </div>
+
+        <div style="padding: 24px;">
+          <p style="font-size: 15px; margin-top: 0;">Hello,</p>
+          <p style="font-size: 14px; line-height: 1.5; color: #475569;">
+            This is a test notification confirming that the MeetSpace automated mail notification service is connected and operational.
+          </p>
+
+          <div style="background: #eff6ff; border-left: 4px solid #2563eb; padding: 12px 16px; margin: 16px 0; border-radius: 4px;">
+            <p style="margin: 0; font-size: 13px; color: #1e40af;">
+              ✅ <strong>Status:</strong> Mail delivery is working properly.
+            </p>
+          </div>
+        </div>
+
+        <div style="background: #f1f5f9; padding: 14px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0;">
+          MeetSpace Nirmaan - Automated Notification System
+        </div>
+      </div>
+    </div>
+  `;
+
+  return await sendMail({
+    to: targetEmail,
+    subject,
+    html,
+    text: 'This is a test email from MeetSpace Nirmaan Notification System.',
+  });
+};

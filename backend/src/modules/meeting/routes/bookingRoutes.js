@@ -29,6 +29,9 @@ router.put('/bookings/:id', authenticate, bookingController.updateBooking);
 // Cancel booking
 router.delete('/bookings/:id', authenticate, bookingController.cancelBooking);
 
+// Extend booking time
+router.post('/bookings/:id/extend', authenticate, bookingController.extendBooking);
+
 // ===== ROOMS =====
 // Available alternate rooms (MUST come before :id routes)
 router.get('/rooms/available-alternates', authenticate, roomController.getAvailableAlternates);
@@ -95,4 +98,8 @@ router.delete('/notifications/:id', authenticate, notificationController.deleteN
 // Delete all notifications
 router.delete('/notifications', authenticate, notificationController.deleteAllNotifications);
 
+// Send test email
+router.post('/notifications/send-test-email', authenticate, notificationController.sendTestEmailNotification);
+
 export default router;
+

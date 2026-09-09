@@ -158,6 +158,34 @@ export const getNotificationStats = async (req, res) => {
   }
 };
 
+import { sendTestEmail } from '../../../services/emailService.js';
+
+// Send a test email
+export const sendTestEmailNotification = async (req, res) => {
+  try {
+    const targetEmail = req.body?.email || req.user?.email;
+    if (!targetEmail) {
+      return res.status(400).json({ success: false, error: 'Recipient email is required' });
+    }
+
+    const result = await sendTestEmail(targetEmail);
+    if (result.success) {
+      return res.json({
+        success: true,
+        message: result.devMode
+          ? `Test email logged in server console (Dev mode - configure SMTP in .env for real inbox delivery).`
+          : `Test email successfully delivered to ${targetEmail}!`,
+        data: result,
+      });
+    } else {
+      return res.status(500).json({ success: false, error: result.error || 'Failed to dispatch email' });
+    }
+  } catch (error) {
+    console.error('Error in sendTestEmailNotification:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 export default {
   getUserNotifications,
   getUnreadCount,
@@ -166,4 +194,6 @@ export default {
   deleteNotification,
   deleteAllNotifications,
   getNotificationStats,
+  sendTestEmailNotification,
 };
+

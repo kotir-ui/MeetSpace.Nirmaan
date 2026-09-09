@@ -270,17 +270,29 @@ export default function AdminApprovalsManagement() {
 
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.3 }}>
-                          <PersonIcon fontSize="small" sx={{ color: 'text.secondary', fontSize: 16 }} />
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            {organizer.name || 'User'}
+                          <PersonIcon fontSize="small" sx={{ color: 'primary.main', fontSize: 16 }} />
+                          <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                            {organizer.name || 'Employee'}
                           </Typography>
                         </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <DeptIcon fontSize="small" sx={{ color: 'text.secondary', fontSize: 16 }} />
-                          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                            {dept.name || 'General Dept'}
+                        {organizer.email && (
+                          <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                            {organizer.email}
+                          </Typography>
+                        )}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.3 }}>
+                          <DeptIcon fontSize="small" sx={{ color: 'text.secondary', fontSize: 15 }} />
+                          <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                            Dept: {dept.name || 'General'}
                           </Typography>
                         </Box>
+                        {dept.head && (
+                          <Chip
+                            label={`Head: ${dept.head.name || dept.head.email}`}
+                            size="small"
+                            sx={{ height: 20, fontSize: '0.68rem', bgcolor: '#F1F5F9', color: '#475569', fontWeight: 600 }}
+                          />
+                        )}
                       </TableCell>
 
                       <TableCell>

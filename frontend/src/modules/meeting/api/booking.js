@@ -10,6 +10,7 @@ export const checkAvailability = (params) => api.get('/booking/bookings/availabi
 export const createBooking = (data) => api.post('/booking/bookings', data);
 export const updateBooking = (id, data) => api.put(`/booking/bookings/${id}`, data);
 export const cancelBooking = (id, data) => api.delete(`/booking/bookings/${id}`, { data });
+export const extendBooking = (id, data) => api.post(`/booking/bookings/${id}/extend`, data);
 
 // Rooms
 export const getRooms = (params) => api.get('/booking/rooms', { params });
@@ -36,3 +37,5 @@ export const getNotificationStats = () => api.get('/booking/notifications/stats'
 export const markNotificationAsRead = (id) => api.put(`/booking/notifications/${id}/read`);
 export const markAllNotificationsAsRead = () => api.put('/booking/notifications/mark-all-read');
 export const deleteNotification = (id) => api.delete(`/booking/notifications/${id}`);
+export const sendTestEmail = (data) => api.post('/booking/notifications/send-test-email', data);
+
