@@ -45,7 +45,7 @@ export default function MyBookings() {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const response = await bookingApi.getBookings();
+      const response = await bookingApi.getBookings({ myBookings: 'true' });
       setBookings(response.data?.data || []);
     } catch (error) {
       console.error('Error fetching bookings:', error);

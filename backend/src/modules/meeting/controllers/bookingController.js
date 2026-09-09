@@ -89,11 +89,11 @@ export const getBookings = async (req, res) => {
       if (dateTo) where.meeting_date[Op.lte] = dateTo;
     }
 
-    // Role-based filtering
-    if (userRole === 'Viewer' || userRole === 'Employee') {
+    // Filter by organizer only when explicitly requested (e.g., My Bookings tab)
+    const filterMyBookingsOnly = myBookings === 'true' || my_bookings === 'true' || req.query.myBookingsOnly === 'true';
+    if (filterMyBookingsOnly) {
       where.organizer_id = userId;
     }
-    // Admin/Super Admin see all bookings
 
     const bookings = await MeetingBooking.findAll({
       where,

@@ -472,7 +472,7 @@ export default function BookingDashboard() {
                             <Chip
                               label={`Booked: ${bookedSlotsCount}`}
                               size="small"
-                              sx={{ bgcolor: '#FEE2E2', color: '#991B1B', fontWeight: 700, fontSize: '0.73rem', height: 24 }}
+                              sx={{ bgcolor: '#DBEAFE', color: '#1E40AF', fontWeight: 700, fontSize: '0.73rem', height: 24 }}
                             />
                             <Chip
                               label={`Free: ${availableSlotsCount}`}
@@ -515,6 +515,7 @@ export default function BookingDashboard() {
                               const booking = getBookingForSlot(room.id, slot, room.name);
                               const isBooked = !!booking;
                               const isPending = booking?.status === 'pending_department_head' || booking?.status === 'pending_hr' || booking?.status === 'pending_manager' || booking?.status === 'pending';
+                              const isExtended = booking?.status === 'extended' || booking?.is_extended;
 
                               return (
                                 <Tooltip
@@ -523,7 +524,7 @@ export default function BookingDashboard() {
                                     unavailable
                                       ? 'Room is currently unavailable'
                                       : isBooked
-                                      ? `Booked: ${booking.title || 'Meeting'} (${booking.user?.name || booking.user?.email || booking.organizer?.name || 'User'})`
+                                      ? `${isPending ? 'Pending Approval' : isExtended ? 'Extended (In Use)' : 'Booked'}: ${booking.title || 'Meeting'} (${booking.user?.name || booking.user?.email || booking.organizer?.name || 'User'})`
                                       : `Click to book ${slot.label} - ${slot.end}`
                                   }
                                 >
@@ -543,13 +544,13 @@ export default function BookingDashboard() {
                                       cursor: unavailable || isBooked ? 'not-allowed' : 'pointer',
                                       border: '1.5px solid',
                                       borderColor: isBooked
-                                        ? isPending ? '#F59E0B' : '#EF4444'
+                                        ? isPending ? '#3B82F6' : '#2563EB'
                                         : '#86EFAC',
                                       bgcolor: isBooked
-                                        ? isPending ? '#FEF3C7' : '#FEE2E2'
+                                        ? isPending ? '#EFF6FF' : '#DBEAFE'
                                         : '#F0FDF4',
                                       color: isBooked
-                                        ? isPending ? '#B45309' : '#DC2626'
+                                        ? isPending ? '#1D4ED8' : '#1E40AF'
                                         : '#166534',
                                       transition: 'all 0.15s ease',
                                       '&:hover': !unavailable && !isBooked ? {
@@ -562,7 +563,7 @@ export default function BookingDashboard() {
                                   >
                                     <div>{slot.label}</div>
                                     <div style={{ fontSize: '0.65rem', fontWeight: 800 }}>
-                                      {isBooked ? (isPending ? 'Pending' : 'Booked') : 'Available'}
+                                      {isBooked ? (isPending ? 'Pending' : isExtended ? 'Extended' : 'Booked') : 'Available'}
                                     </div>
                                   </Box>
                                 </Tooltip>
