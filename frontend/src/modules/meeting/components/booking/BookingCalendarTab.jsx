@@ -40,6 +40,8 @@ import {
   Draw as DrawIcon,
   Info as InfoIcon,
   Edit as EditIcon,
+  Search as SearchIcon,
+  LocationOn as LocationOnIcon,
 } from '@mui/icons-material';
 import { useLocation } from 'react-router-dom';
 import * as bookingApi from '../../api/booking.js';
@@ -573,11 +575,16 @@ export default function BookingCalendarTab() {
                 <Divider sx={{ my: 1.5 }} />
 
                 {/* Time Selection Dropdowns */}
-                <Grid container spacing={1.5} sx={{ mb: 2 }}>
+                <Grid container spacing={1.2} sx={{ mb: 1.5 }}>
                   <Grid item xs={12} sm={6}>
                     <FormControl fullWidth size="small">
                       <InputLabel>Start Time</InputLabel>
-                      <Select value={startTime} onChange={(e) => setStartTime(e.target.value)} label="Start Time">
+                      <Select
+                        value={startTime}
+                        onChange={(e) => setStartTime(e.target.value)}
+                        label="Start Time"
+                        sx={{ borderRadius: 1.5, bgcolor: '#FAFAFA' }}
+                      >
                         {TimeSlots.map((time) => (
                           <MenuItem key={time} value={time}>{time}</MenuItem>
                         ))}
@@ -587,7 +594,12 @@ export default function BookingCalendarTab() {
                   <Grid item xs={12} sm={6}>
                     <FormControl fullWidth size="small">
                       <InputLabel>End Time</InputLabel>
-                      <Select value={endTime} onChange={(e) => setEndTime(e.target.value)} label="End Time">
+                      <Select
+                        value={endTime}
+                        onChange={(e) => setEndTime(e.target.value)}
+                        label="End Time"
+                        sx={{ borderRadius: 1.5, bgcolor: '#FAFAFA' }}
+                      >
                         {TimeSlots.map((time) => (
                           <MenuItem key={time} value={time}>{time}</MenuItem>
                         ))}
@@ -596,8 +608,8 @@ export default function BookingCalendarTab() {
                   </Grid>
                 </Grid>
 
-                {/* Number of Participants */}
-                <Grid container spacing={1.5} sx={{ mb: 2 }}>
+                {/* Number of Participants & Department */}
+                <Grid container spacing={1.2} sx={{ mb: 1.5 }}>
                   <Grid item xs={12} sm={6}>
                     <TextField
                       label="Number of People *"
@@ -607,6 +619,7 @@ export default function BookingCalendarTab() {
                       fullWidth
                       size="small"
                       inputProps={{ min: 1 }}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5, bgcolor: '#FAFAFA' } }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
@@ -618,6 +631,7 @@ export default function BookingCalendarTab() {
                         value={department || ''}
                         onChange={(e) => setDepartment(e.target.value)}
                         label="Department *"
+                        sx={{ borderRadius: 1.5, bgcolor: '#FAFAFA' }}
                       >
                         <MenuItem value="">
                           <em>Select Department</em>
@@ -637,62 +651,61 @@ export default function BookingCalendarTab() {
                   </Grid>
                 </Grid>
 
-                {/* Participant Names */}
-                <Grid container spacing={1.5} sx={{ mb: 2 }}>
-                  <Grid item xs={12}>
+                {/* Participant Names & Building/Floor in Compact 2-Column Grid */}
+                <Grid container spacing={1.2} sx={{ mb: 1.5 }}>
+                  <Grid item xs={12} sm={6}>
                     <TextField
                       label="Participant Names (optional)"
                       value={participantNames}
                       onChange={(e) => setParticipantNames(e.target.value)}
                       fullWidth
-                      multiline
-                      rows={2}
                       size="small"
-                      placeholder="Enter participant names, one per line"
+                      placeholder="e.g. John, Sarah"
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5, bgcolor: '#FAFAFA' } }}
                     />
                   </Grid>
-                </Grid>
-
-                {/* Building/Floor Filter */}
-                <Grid container spacing={1.5} sx={{ mb: 2 }}>
-                  <Grid item xs={12}>
+                  <Grid item xs={12} sm={6}>
                     <TextField
                       label="Building / Floor (optional)"
                       value={building}
                       onChange={(e) => setBuilding(e.target.value)}
                       fullWidth
                       size="small"
-                      placeholder="e.g., Building A - Floor 3"
+                      placeholder="e.g. Main Block - 2nd Floor"
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5, bgcolor: '#FAFAFA' } }}
                     />
                   </Grid>
                 </Grid>
 
                 {/* Meeting Purpose */}
-                <Grid container spacing={1.5} sx={{ mb: 2 }}>
-                  <Grid item xs={12}>
-                    <TextField
-                      label="Meeting Purpose / Agenda *"
-                      value={meetingPurpose}
-                      onChange={(e) => setMeetingPurpose(e.target.value)}
-                      fullWidth
-                      multiline
-                      rows={2}
-                      size="small"
-                    />
-                  </Grid>
-                </Grid>
+                <Box sx={{ mb: 2 }}>
+                  <TextField
+                    label="Meeting Purpose / Agenda *"
+                    value={meetingPurpose}
+                    onChange={(e) => setMeetingPurpose(e.target.value)}
+                    fullWidth
+                    size="small"
+                    placeholder="Enter meeting title or agenda..."
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5, bgcolor: '#FAFAFA' } }}
+                  />
+                </Box>
 
                 {/* Recurring Options */}
                 {meetingType === 'recurring' && (
-                  <Box sx={{ mb: 2, p: 1.5, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1.5, fontSize: '0.9rem' }}>
+                  <Box sx={{ mb: 2, p: 1.5, backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 1.5 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700, mb: 1.2, fontSize: '0.85rem', color: '#1E293B' }}>
                       Recurrence Settings
                     </Typography>
-                    <Grid container spacing={1.5}>
+                    <Grid container spacing={1.2}>
                       <Grid item xs={12} sm={6}>
                         <FormControl fullWidth size="small">
                           <InputLabel>Recurrence Type</InputLabel>
-                          <Select value={recurrenceType} onChange={(e) => setRecurrenceType(e.target.value)} label="Recurrence Type">
+                          <Select
+                            value={recurrenceType}
+                            onChange={(e) => setRecurrenceType(e.target.value)}
+                            label="Recurrence Type"
+                            sx={{ borderRadius: 1.5, bgcolor: '#FFF' }}
+                          >
                             <MenuItem value="daily">Daily</MenuItem>
                             <MenuItem value="weekly">Weekly</MenuItem>
                             <MenuItem value="monthly">Monthly</MenuItem>
@@ -708,6 +721,7 @@ export default function BookingCalendarTab() {
                           fullWidth
                           size="small"
                           InputLabelProps={{ shrink: true }}
+                          sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5, bgcolor: '#FFF' } }}
                         />
                       </Grid>
                     </Grid>
@@ -720,7 +734,27 @@ export default function BookingCalendarTab() {
                   fullWidth
                   onClick={fetchAvailableRooms}
                   disabled={!startTime || !endTime || !numberOfPeople || !meetingPurpose}
-                  sx={{ py: 1, fontWeight: 600, fontSize: '0.95rem' }}
+                  startIcon={<SearchIcon />}
+                  sx={{
+                    py: 1,
+                    height: 42,
+                    fontWeight: 700,
+                    fontSize: '0.9rem',
+                    textTransform: 'none',
+                    borderRadius: 1.5,
+                    background: (!startTime || !endTime || !numberOfPeople || !meetingPurpose)
+                      ? undefined
+                      : 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
+                    boxShadow: (!startTime || !endTime || !numberOfPeople || !meetingPurpose)
+                      ? 'none'
+                      : '0 4px 12px rgba(37,99,235,0.3)',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%)',
+                      boxShadow: '0 6px 16px rgba(37,99,235,0.4)',
+                      transform: 'translateY(-1px)',
+                    },
+                  }}
                 >
                   Search Available Rooms
                 </Button>
