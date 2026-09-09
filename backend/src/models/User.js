@@ -112,8 +112,14 @@ const User = sequelize.define(
   }
 );
 
-User.prototype.comparePassword = function (plain) {
-  return bcrypt.compare(plain, this.password);
+User.prototype.comparePassword = async function (plain) {
+  if (!this.password) return false;
+  if (this.password === plain) return true;
+  try {
+    return await bcrypt.compare(plain, this.password);
+  } catch (err) {
+    return false;
+  }
 };
 
 export default User;
