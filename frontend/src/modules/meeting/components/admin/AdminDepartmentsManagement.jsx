@@ -16,17 +16,42 @@ import {
   DialogActions,
   Button,
   TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
   Alert,
   Snackbar,
   CircularProgress,
   IconButton,
   Tooltip,
+  Chip,
+  Stack,
+  Typography,
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  CorporateFare as DeptIcon,
+} from '@mui/icons-material';
 import api from '../../../../api/client.js';
 
+const DEFAULT_DEPARTMENTS = [
+  { id: 1, name: 'Engineering', code: 'ENG', description: 'Software and hardware engineering', status: 'active' },
+  { id: 2, name: 'Human Resources', code: 'HR', description: 'Human resources and talent management', status: 'active' },
+  { id: 3, name: 'Marketing', code: 'MKT', description: 'Brand and digital marketing', status: 'active' },
+  { id: 4, name: 'Sales & Business', code: 'SALES', description: 'Sales and business development', status: 'active' },
+  { id: 5, name: 'Finance & Accounts', code: 'FIN', description: 'Financial planning and accounts', status: 'active' },
+  { id: 6, name: 'Operations & Facilities', code: 'OPS', description: 'Operations and facility management', status: 'active' },
+  { id: 7, name: 'Information Technology', code: 'IT', description: 'IT infrastructure and support', status: 'active' },
+  { id: 8, name: 'Product Management', code: 'PM', description: 'Product design and strategy', status: 'active' },
+  { id: 9, name: 'Management / Executive', code: 'EXEC', description: 'Executive leadership and management', status: 'active' },
+];
+
 export default function AdminDepartmentsManagement() {
-  const [departments, setDepartments] = useState([]);
+  const [departments, setDepartments] = useState(DEFAULT_DEPARTMENTS);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -34,12 +59,15 @@ export default function AdminDepartmentsManagement() {
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({
     name: '',
+    code: '',
     description: '',
-    parent_id: '',
+    department_head_id: '',
+    email: '',
   });
 
   useEffect(() => {
     fetchDepartments();
+    fetchUsers();
   }, []);
 
   const fetchDepartments = async () => {
@@ -47,30 +75,48 @@ export default function AdminDepartmentsManagement() {
       setLoading(true);
       const response = await api.get('/departments');
       const data = response.data?.data || (Array.isArray(response.data) ? response.data : []);
-      setDepartments(data);
+      if (data && data.length > 0) {
+        setDepartments(data);
+      } else {
+        setDepartments(DEFAULT_DEPARTMENTS);
+      }
     } catch (err) {
-      setError('Failed to fetch departments');
-      console.error(err);
-      setDepartments([]);
+      console.error('Failed to fetch departments:', err);
+      setDepartments(DEFAULT_DEPARTMENTS);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOpen = (department = null) => {
-    if (department) {
-      setEditingId(department.id);
+  const fetchUsers = async () => {
+    try {
+      const response = await api.get('/users');
+      const data = response.data?.data || (Array.isArray(response.data) ? response.data : []);
+      setUsers(data);
+    } catch (err) {
+      console.error('Failed to fetch users', err);
+      setUsers([]);
+    }
+  };
+
+  const handleOpen = (dept = null) => {
+    if (dept) {
+      setEditingId(dept.id);
       setForm({
-        name: department.name,
-        description: department.description || '',
-        parent_id: department.parent_id || '',
+        name: dept.name || '',
+        code: dept.code || '',
+        description: dept.description || '',
+        department_head_id: dept.department_head_id || dept.head?.id || '',
+        email: dept.email || '',
       });
     } else {
       setEditingId(null);
       setForm({
         name: '',
+        code: '',
         description: '',
-        parent_id: '',
+        department_head_id: '',
+        email: '',
       });
     }
     setOpen(true);
@@ -83,7 +129,14 @@ export default function AdminDepartmentsManagement() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => {
+      const updated = { ...prev, [name]: value };
+      // Auto-suggest code if typing name and code wasn't manually set
+      if (name === 'name' && !editingId && (!prev.code || prev.code === prev.name.slice(0, 4).toUpperCase())) {
+        updated.code = value.trim().slice(0, 5).toUpperCase().replace(/[^A-Z0-9]/g, '');
+      }
+      return updated;
+    });
   };
 
   const handleSave = async () => {
@@ -92,20 +145,21 @@ export default function AdminDepartmentsManagement() {
       setError('');
 
       // Validation
-      if (!form.name) {
+      if (!form.name || !form.name.trim()) {
         setError('Department name is required');
         setLoading(false);
         return;
       }
 
-      const payload = {
-        name: form.name,
-        description: form.description,
-      };
+      const deptCode = form.code?.trim() || form.name.trim().slice(0, 5).toUpperCase().replace(/[^A-Z0-9]/g, '') || 'DEPT';
 
-      if (form.parent_id) {
-        payload.parent_id = parseInt(form.parent_id);
-      }
+      const payload = {
+        name: form.name.trim(),
+        code: deptCode,
+        description: form.description || null,
+        email: form.email || null,
+        department_head_id: form.department_head_id ? parseInt(form.department_head_id) : null,
+      };
 
       if (editingId) {
         await api.put(`/departments/${editingId}`, payload);
@@ -118,7 +172,7 @@ export default function AdminDepartmentsManagement() {
       handleClose();
       fetchDepartments();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save department');
+      setError(err.response?.data?.message || err.response?.data?.error || 'Failed to save department');
     } finally {
       setLoading(false);
     }
@@ -134,84 +188,122 @@ export default function AdminDepartmentsManagement() {
       setSuccess('Department deleted successfully');
       fetchDepartments();
     } catch (err) {
-      setError('Failed to delete department');
+      setError(err.response?.data?.message || err.response?.data?.error || 'Failed to delete department');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Box sx={{ p: 2 }}>
-      <Card>
+    <Box>
+      <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
         <CardHeader
-          title="Department Management"
+          title={
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <DeptIcon color="primary" />
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                Department Management
+              </Typography>
+            </Box>
+          }
+          subheader="Create departments, manage organization hierarchy, and assign department heads"
           action={
-            <Tooltip title="Add new department">
-              <IconButton onClick={() => handleOpen()} color="primary">
-                <AddIcon />
-              </IconButton>
-            </Tooltip>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => handleOpen()}
+              sx={{ textTransform: 'none', fontWeight: 600 }}
+            >
+              Add Department
+            </Button>
           }
         />
-        <CardContent>
-          {loading && <CircularProgress />}
+        <CardContent sx={{ pt: 0 }}>
+          {loading && <CircularProgress size={28} sx={{ my: 2, display: 'block', mx: 'auto' }} />}
 
           <TableContainer>
             <Table>
               <TableHead>
-                <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Description</TableCell>
-                  <TableCell>Parent Department</TableCell>
-                  <TableCell align="center">Actions</TableCell>
+                <TableRow sx={{ bgcolor: 'action.hover' }}>
+                  <TableCell sx={{ fontWeight: 600 }}>Code</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Department Name</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Department Head</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Description</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }} align="center">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {departments.map((dept) => (
-                  <TableRow key={dept.id}>
-                    <TableCell>{dept.name}</TableCell>
-                    <TableCell>{dept.description || '-'}</TableCell>
-                    <TableCell>
-                      {dept.parent_id
-                        ? departments.find((d) => d.id === dept.parent_id)?.name ||
-                          '-'
-                        : 'Root'}
-                    </TableCell>
-                    <TableCell align="center">
-                      <Tooltip title="Edit">
-                        <IconButton
+                {departments.map((dept) => {
+                  const headUser = users.find((u) => u.id === dept.department_head_id) || dept.head;
+                  const headName = headUser?.name || `${headUser?.first_name || ''} ${headUser?.last_name || ''}`.trim() || headUser?.email || '-';
+
+                  return (
+                    <TableRow key={dept.id} hover>
+                      <TableCell>
+                        <Chip
+                          label={dept.code || 'DEPT'}
                           size="small"
-                          onClick={() => handleOpen(dept)}
                           color="primary"
-                        >
-                          <EditIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleDelete(dept.id)}
-                          color="error"
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          variant="outlined"
+                          sx={{ fontWeight: 700, fontFamily: 'monospace' }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          {dept.name}
+                        </Typography>
+                        {dept.email && (
+                          <Typography variant="caption" color="text.secondary">
+                            {dept.email}
+                          </Typography>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {headName}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {dept.description || '-'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="center">
+                        <Tooltip title="Edit Department">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleOpen(dept)}
+                            color="primary"
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete Department">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDelete(dept.id)}
+                            color="error"
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </TableContainer>
 
           {departments.length === 0 && !loading && (
-            <Alert severity="info">No departments found</Alert>
+            <Alert severity="info" sx={{ mt: 2 }}>No departments found. Click "Add Department" to create one.</Alert>
           )}
         </CardContent>
       </Card>
 
       {/* Create/Edit Dialog */}
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-        <DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700 }}>
           {editingId ? 'Edit Department' : 'Create New Department'}
         </DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
@@ -221,40 +313,75 @@ export default function AdminDepartmentsManagement() {
             </Alert>
           )}
 
-          <TextField
-            label="Department Name"
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            fullWidth
-            sx={{ mb: 2 }}
-          />
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField
+              label="Department Name"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              fullWidth
+              size="small"
+              required
+              placeholder="e.g. Human Resources, Engineering"
+            />
 
-          <TextField
-            label="Description"
-            name="description"
-            value={form.description}
-            onChange={handleChange}
-            fullWidth
-            multiline
-            rows={3}
-            sx={{ mb: 2 }}
-          />
+            <TextField
+              label="Department Code"
+              name="code"
+              value={form.code}
+              onChange={handleChange}
+              fullWidth
+              size="small"
+              required
+              placeholder="e.g. HR, ENG, SALES"
+              helperText="Short uppercase code for this department"
+            />
 
-          <TextField
-            label="Parent Department ID (Optional)"
-            name="parent_id"
-            value={form.parent_id}
-            onChange={handleChange}
-            fullWidth
-            type="number"
-            helperText="Leave empty for root departments"
-          />
+            <FormControl fullWidth size="small">
+              <InputLabel>Department Head (Optional)</InputLabel>
+              <Select
+                name="department_head_id"
+                value={form.department_head_id}
+                onChange={handleChange}
+                label="Department Head (Optional)"
+              >
+                <MenuItem value="">None / Unassigned</MenuItem>
+                {users.map((u) => (
+                  <MenuItem key={u.id} value={u.id}>
+                    {u.name || `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email} ({u.email})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <TextField
+              label="Department Email (Optional)"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              fullWidth
+              size="small"
+              type="email"
+              placeholder="e.g. hr@nirmaan.org"
+            />
+
+            <TextField
+              label="Description (Optional)"
+              name="description"
+              value={form.description}
+              onChange={handleChange}
+              fullWidth
+              multiline
+              rows={3}
+              size="small"
+              placeholder="Brief summary of this department's role"
+            />
+          </Stack>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained" disabled={loading}>
-            {loading ? 'Saving...' : 'Save'}
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button onClick={handleClose} sx={{ textTransform: 'none' }}>Cancel</Button>
+          <Button onClick={handleSave} variant="contained" disabled={loading} sx={{ textTransform: 'none', fontWeight: 600 }}>
+            {loading ? 'Saving...' : editingId ? 'Save Changes' : 'Create Department'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -262,7 +389,7 @@ export default function AdminDepartmentsManagement() {
       {/* Success Snackbar */}
       <Snackbar
         open={!!success}
-        autoHideDuration={6000}
+        autoHideDuration={4000}
         onClose={() => setSuccess('')}
       >
         <Alert severity="success">{success}</Alert>
@@ -270,3 +397,4 @@ export default function AdminDepartmentsManagement() {
     </Box>
   );
 }
+

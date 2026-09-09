@@ -20,7 +20,7 @@ export const getAllDepartments = async (req, res) => {
       ];
     }
 
-    const departments = await Department.findAll({
+    let departments = await Department.findAll({
       where,
       include: [
         {
@@ -36,6 +36,40 @@ export const getAllDepartments = async (req, res) => {
       ],
       order: [['created_at', 'DESC']],
     });
+
+    if (departments.length === 0 && !status && !search) {
+      const defaultDepts = [
+        { name: 'Engineering', code: 'ENG', description: 'Software and hardware engineering', status: 'active' },
+        { name: 'Human Resources', code: 'HR', description: 'Human resources and talent management', status: 'active' },
+        { name: 'Marketing', code: 'MKT', description: 'Brand and digital marketing', status: 'active' },
+        { name: 'Sales & Business', code: 'SALES', description: 'Sales and business development', status: 'active' },
+        { name: 'Finance & Accounts', code: 'FIN', description: 'Financial planning and accounts', status: 'active' },
+        { name: 'Operations & Facilities', code: 'OPS', description: 'Operations and facility management', status: 'active' },
+        { name: 'Information Technology', code: 'IT', description: 'IT infrastructure and support', status: 'active' },
+        { name: 'Product Management', code: 'PM', description: 'Product design and strategy', status: 'active' },
+        { name: 'Management / Executive', code: 'EXEC', description: 'Executive leadership and management', status: 'active' },
+      ];
+      try {
+        await Department.bulkCreate(defaultDepts, { ignoreDuplicates: true });
+        departments = await Department.findAll({
+          include: [
+            {
+              model: User,
+              as: 'head',
+              attributes: ['id', 'name', 'email', 'mobile', 'designation'],
+            },
+            {
+              model: User,
+              as: 'deputy',
+              attributes: ['id', 'name', 'email', 'mobile', 'designation'],
+            },
+          ],
+          order: [['id', 'ASC']],
+        });
+      } catch (seedErr) {
+        console.warn('Could not auto-seed departments:', seedErr.message);
+      }
+    }
 
     res.status(200).json({
       success: true,

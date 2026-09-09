@@ -292,55 +292,25 @@ export default function AdminPanel() {
   return (
     <Box sx={{ py: 2 }}>
       <Container maxWidth="lg">
-        {/* Admin Tab Navigation */}
-        <Paper sx={{ mb: 3, borderRadius: 2 }}>
-          <Tabs
-            value={adminTab}
-            onChange={(e, newValue) => setAdminTab(newValue)}
-            sx={{
-              '& .MuiTab-root': {
-                textTransform: 'none',
-                fontSize: '0.95rem',
-                fontWeight: 500,
-              },
-              '& .MuiTabs-indicator': {
-                height: 4,
-                borderRadius: 2,
-              },
-            }}
-          >
-            <Tab label="📋 Room Management" />
-            <Tab
-              label={
-                <Badge badgeContent={pendingBookings.length} color="error">
-                  Booking Approvals
-                </Badge>
-              }
-            />
-            <Tab label="🔧 Maintenance" />
-          </Tabs>
-        </Paper>
+        {/* Room Management */}
+        <Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              All Meeting Rooms
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={() => {
+                setEditingRoom(null);
+                setRoomData({ name: '', roomNumber: '', location: '', capacity: '', floor: '', building: '', status: 'active' });
+                setRoomDialog(true);
+              }}
+            >
+              + Add New Room
+            </Button>
+          </Box>
 
-        {/* TAB 1: Room Management */}
-        {adminTab === 0 && (
-          <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                All Meeting Rooms
-              </Typography>
-              <Button
-                variant="contained"
-                onClick={() => {
-                  setEditingRoom(null);
-                  setRoomData({ name: '', roomNumber: '', location: '', capacity: '', floor: '', building: '', status: 'active' });
-                  setRoomDialog(true);
-                }}
-              >
-                + Add New Room
-              </Button>
-            </Box>
-
-            {loading ? (
+          {loading ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
                 <CircularProgress />
               </Box>
@@ -366,21 +336,21 @@ export default function AdminPanel() {
 
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
                           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                            👥 Capacity: <strong>{room.capacity} people</strong>
+                            Capacity: <strong>{room.capacity} people</strong>
                           </Typography>
                           {room.floor && (
                             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                              📊 Floor: <strong>{room.floor}</strong>
+                              Floor: <strong>{room.floor}</strong>
                             </Typography>
                           )}
                           {room.building && (
                             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                              🏢 Building: <strong>{room.building}</strong>
+                              Building: <strong>{room.building}</strong>
                             </Typography>
                           )}
                           {room.status === 'maintenance' && room.maintenance_reason && (
                             <Typography variant="caption" sx={{ color: '#f44336', fontStyle: 'italic' }}>
-                              🔧 Reason: {room.maintenance_reason}
+                              Reason: {room.maintenance_reason}
                             </Typography>
                           )}
                         </Box>
@@ -426,173 +396,6 @@ export default function AdminPanel() {
               </Grid>
             )}
           </Box>
-        )}
-
-        {/* TAB 2: Booking Approvals */}
-        {adminTab === 1 && (
-          <Box>
-            <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>
-              Pending Booking Approvals ({pendingBookings.length})
-            </Typography>
-
-            {loading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                <CircularProgress />
-              </Box>
-            ) : pendingBookings.length === 0 ? (
-              <Alert severity="info">No pending booking approvals</Alert>
-            ) : (
-              <TableContainer component={Paper}>
-                <Table>
-                  <TableHead>
-                    <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                      <TableCell sx={{ fontWeight: 700 }}>Meeting</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Room</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Date & Time</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Organizer</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Participants</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-                      <TableCell sx={{ fontWeight: 700, textAlign: 'center' }}>Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {pendingBookings.map((booking) => (
-                      <TableRow key={booking.id} sx={{ '&:hover': { backgroundColor: '#f9f9f9' } }}>
-                        <TableCell>
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            {booking.title}
-                          </Typography>
-                          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                            {booking.purpose}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>{booking.room_name || 'N/A'}</TableCell>
-                        <TableCell>
-                          <Typography variant="body2">
-                            {new Date(booking.meeting_date).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                            })}
-                          </Typography>
-                          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                            {booking.start_time} - {booking.end_time}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>{booking.organizer_name || 'N/A'}</TableCell>
-                        <TableCell>{booking.number_of_participants}</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={getStatusLabel(booking.approval_status || 'pending_manager')}
-                            size="small"
-                            variant="outlined"
-                          />
-                        </TableCell>
-                        <TableCell sx={{ textAlign: 'center' }}>
-                          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                            <IconButton
-                              size="small"
-                              color="success"
-                              title="Approve"
-                              onClick={() => {
-                                setSelectedBooking(booking);
-                                setApprovalAction('approve');
-                                setApprovalNotes('');
-                                setApprovalDialog(true);
-                              }}
-                            >
-                              <CheckCircleIcon />
-                            </IconButton>
-                            <IconButton
-                              size="small"
-                              color="error"
-                              title="Reject"
-                              onClick={() => {
-                                setSelectedBooking(booking);
-                                setApprovalAction('reject');
-                                setApprovalNotes('');
-                                setApprovalDialog(true);
-                              }}
-                            >
-                              <CancelIcon />
-                            </IconButton>
-                            <IconButton
-                              size="small"
-                              color="warning"
-                              title="Hold"
-                              onClick={() => {
-                                setSelectedBooking(booking);
-                                setApprovalAction('hold');
-                                setApprovalNotes('');
-                                setApprovalDialog(true);
-                              }}
-                            >
-                              <PauseIcon />
-                            </IconButton>
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-          </Box>
-        )}
-
-        {/* TAB 3: Maintenance Management */}
-        {adminTab === 2 && (
-          <Box>
-            <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>
-              Rooms Under Maintenance
-            </Typography>
-
-            <Grid container spacing={2}>
-              {rooms
-                .filter((room) => room.status === 'maintenance')
-                .map((room) => (
-                  <Grid item xs={12} sm={6} md={4} key={room.id}>
-                    <Card sx={{ backgroundColor: '#fff3e0', borderLeft: '4px solid #f44336' }}>
-                      <CardContent>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>
-                          {room.name}
-                        </Typography>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
-                          <Typography variant="caption">
-                            🔧 <strong>Maintenance Reason:</strong> {room.maintenance_reason || 'Not specified'}
-                          </Typography>
-                          {room.maintenance_end_date && (
-                            <Typography variant="caption">
-                              📅 <strong>Expected End:</strong> {new Date(room.maintenance_end_date).toLocaleDateString()}
-                            </Typography>
-                          )}
-                          <Typography variant="caption">
-                            👥 <strong>Capacity:</strong> {room.capacity} people
-                          </Typography>
-                        </Box>
-                        <Button
-                          variant="outlined"
-                          color="success"
-                          size="small"
-                          fullWidth
-                          onClick={() => {
-                            setMaintenanceRoom(room);
-                            setMaintenanceData({ reason: '', endDate: '' });
-                            setMaintenanceDialog(true);
-                          }}
-                        >
-                          Restore to Service
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                ))}
-            </Grid>
-
-            {rooms.filter((room) => room.status === 'maintenance').length === 0 && (
-              <Alert severity="info">No rooms under maintenance</Alert>
-            )}
-          </Box>
-        )}
       </Container>
 
       {/* Room Dialog */}
@@ -655,9 +458,9 @@ export default function AdminPanel() {
       {/* Approval Dialog */}
       <Dialog open={approvalDialog} onClose={() => setApprovalDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
-          {approvalAction === 'approve' && '✅ Approve Booking'}
-          {approvalAction === 'reject' && '❌ Reject Booking'}
-          {approvalAction === 'hold' && '⏸️ Hold Booking'}
+          {approvalAction === 'approve' && 'Approve Booking'}
+          {approvalAction === 'reject' && 'Reject Booking'}
+          {approvalAction === 'hold' && 'Hold Booking'}
         </DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
           {selectedBooking && (
@@ -700,7 +503,7 @@ export default function AdminPanel() {
       {/* Maintenance Dialog */}
       <Dialog open={maintenanceDialog} onClose={() => setMaintenanceDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
-          {maintenanceRoom?.status === 'maintenance' ? '✅ Restore Room to Service' : '🔧 Set Room for Maintenance'}
+          {maintenanceRoom?.status === 'maintenance' ? 'Restore Room to Service' : 'Set Room for Maintenance'}
         </DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
           {maintenanceRoom && <Typography variant="body2">Room: <strong>{maintenanceRoom.name}</strong></Typography>}

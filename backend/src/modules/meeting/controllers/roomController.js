@@ -12,15 +12,145 @@ export const getAllRooms = async (req, res) => {
     if (status) where.status = status;
     if (capacity) where.capacity = { [Op.gte]: capacity };
 
-    const rooms = await MeetingRoom.findAll({
+    let rooms = await MeetingRoom.findAll({
       where,
       include: [{ model: RoomFacility, as: 'facilities', attributes: ['id', 'facility_type'] }],
       order: [['floor', 'ASC'], ['room_number', 'ASC']],
     });
 
+    if (rooms.length === 0 && !status && !capacity) {
+      const defaultRooms = [
+        {
+          name: 'Sarvepalli Radhakrishnan Hall',
+          room_number: 'CR-101',
+          building: 'Main Block',
+          floor: 1,
+          location: '1st Floor - East Wing',
+          room_type: 'conference_room',
+          capacity: 18,
+          status: 'available',
+          description: 'Executive conference hall with video conferencing and smart board.',
+        },
+        {
+          name: 'APJ Abdul Kalam Board Room',
+          room_number: 'BR-201',
+          building: 'Main Block',
+          floor: 2,
+          location: '2nd Floor - Executive Suite',
+          room_type: 'board_room',
+          capacity: 24,
+          status: 'available',
+          description: 'Board room for leadership sessions and strategic reviews.',
+        },
+        {
+          name: 'Swami Vivekananda Meeting Room',
+          room_number: 'MR-102',
+          building: 'Main Block',
+          floor: 1,
+          location: '1st Floor - West Wing',
+          room_type: 'meeting_room',
+          capacity: 10,
+          status: 'available',
+          description: 'Medium team collaboration and meeting room.',
+        },
+        {
+          name: 'Aryabhata Discussion Suite',
+          room_number: 'DR-301',
+          building: 'Innovation Block',
+          floor: 3,
+          location: '3rd Floor - Tech Wing',
+          room_type: 'discussion_room',
+          capacity: 8,
+          status: 'available',
+          description: 'Rapid discussion and agile breakout room.',
+        },
+        {
+          name: 'Sir CV Raman Innovation Lab',
+          room_number: 'TR-302',
+          building: 'Innovation Block',
+          floor: 3,
+          location: '3rd Floor - South Wing',
+          room_type: 'training_room',
+          capacity: 30,
+          status: 'available',
+          description: 'Spacious training and interactive presentation hall.',
+        },
+        {
+          name: 'Chanakya Strategy Room',
+          room_number: 'MR-202',
+          building: 'Main Block',
+          floor: 2,
+          location: '2nd Floor - North Wing',
+          room_type: 'meeting_room',
+          capacity: 12,
+          status: 'available',
+          description: 'Client meetings and department strategy room.',
+        },
+      ];
+
+      try {
+        await MeetingRoom.bulkCreate(defaultRooms, { ignoreDuplicates: true });
+        rooms = await MeetingRoom.findAll({
+          include: [{ model: RoomFacility, as: 'facilities', attributes: ['id', 'facility_type'] }],
+          order: [['floor', 'ASC'], ['room_number', 'ASC']],
+        });
+      } catch (seedErr) {
+        console.warn('Could not auto-seed rooms:', seedErr.message);
+      }
+    }
+
     res.json({ success: true, data: rooms });
   } catch (error) {
     console.error('Error fetching rooms:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// Get available alternate rooms for date and time slot
+export const getAvailableAlternates = async (req, res) => {
+  try {
+    const { date, startTime, endTime, excludeRoomId, minCapacity } = req.query;
+
+    if (!date || !startTime || !endTime) {
+      return res.status(400).json({ success: false, error: 'Missing date, startTime, or endTime' });
+    }
+
+    const where = {
+      status: { [Op.in]: ['active', 'available'] },
+    };
+    if (excludeRoomId) {
+      where.id = { [Op.ne]: excludeRoomId };
+    }
+    if (minCapacity) {
+      where.capacity = { [Op.gte]: parseInt(minCapacity, 10) };
+    }
+
+    const allRooms = await MeetingRoom.findAll({
+      where,
+      include: [{ model: RoomFacility, as: 'facilities', attributes: ['id', 'facility_type'] }],
+      order: [['capacity', 'ASC']],
+    });
+
+    const busyBookings = await MeetingBooking.findAll({
+      where: {
+        meeting_date: date,
+        status: 'confirmed',
+        [Op.or]: [
+          {
+            start_time: { [Op.lt]: endTime },
+            end_time: { [Op.gt]: startTime },
+          },
+        ],
+      },
+      attributes: ['meeting_room_id'],
+    });
+
+    const busyRoomIds = new Set(busyBookings.map((b) => b.meeting_room_id));
+    const availableRooms = allRooms.filter((r) => !busyRoomIds.has(r.id));
+
+    res.json({ success: true, data: availableRooms });
+  } catch (error) {
+    console.error('Error fetching available alternate rooms:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 };

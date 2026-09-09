@@ -86,6 +86,8 @@ export const login = async (req, res, next) => {
         department: user.department,
         department_id: user.department_id,
         status: user.status,
+        mobile: user.mobile,
+        designation: user.designation,
       },
     });
   } catch (err) {
@@ -129,6 +131,8 @@ export const me = async (req, res) => {
     department: req.user.department,
     department_id: req.user.department_id,
     status: req.user.status,
+    mobile: req.user.mobile,
+    designation: req.user.designation,
   });
 };
 
@@ -137,6 +141,44 @@ export const authConfig = async (req, res, next) => {
   try {
     const map = await getSettingsMap();
     res.json({ forgot_password_enabled: map.forgot_password_enabled });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// PUT /api/auth/profile — update current user's profile
+export const updateProfile = async (req, res, next) => {
+  try {
+    const { name, mobile, designation } = req.body;
+    
+    if (!name) {
+      return res.status(400).json({ message: 'Name is required' });
+    }
+
+    const user = req.user;
+    
+    user.name = name;
+    if (mobile !== undefined) user.mobile = mobile;
+    if (designation !== undefined) user.designation = designation;
+    
+    await user.save();
+    
+    await logActivity(req, 'UPDATE', 'auth', `User ${user.email} updated their profile`);
+    
+    res.json({
+      message: 'Profile updated successfully',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        mobile: user.mobile,
+        designation: user.designation,
+        role: user.role?.name,
+        department: user.department,
+        department_id: user.department_id,
+        status: user.status,
+      }
+    });
   } catch (err) {
     next(err);
   }

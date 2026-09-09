@@ -13,6 +13,7 @@ export const cancelBooking = (id, data) => api.delete(`/booking/bookings/${id}`,
 
 // Rooms
 export const getRooms = (params) => api.get('/booking/rooms', { params });
+export const getAvailableAlternates = (params) => api.get('/booking/rooms/available-alternates', { params });
 export const getRoomDetails = (id) => api.get(`/booking/rooms/${id}`);
 export const getRoomSchedule = (id, params) => api.get(`/booking/rooms/${id}/schedule`, { params });
 export const getRoomStats = () => api.get('/booking/rooms/stats');

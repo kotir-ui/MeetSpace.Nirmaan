@@ -30,6 +30,9 @@ router.put('/bookings/:id', authenticate, bookingController.updateBooking);
 router.delete('/bookings/:id', authenticate, bookingController.cancelBooking);
 
 // ===== ROOMS =====
+// Available alternate rooms (MUST come before :id routes)
+router.get('/rooms/available-alternates', authenticate, roomController.getAvailableAlternates);
+
 // Room statistics (MUST come before :id routes)
 router.get('/rooms/stats', authenticate, roomController.getRoomStats);
 

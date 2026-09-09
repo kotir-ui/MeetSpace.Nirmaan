@@ -9,11 +9,7 @@ import {
   Typography,
   Divider,
 } from '@mui/material';
-import PeopleIcon from '@mui/icons-material/People';
-import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
-import ScheduleIcon from '@mui/icons-material/Schedule';
-import EventNoteIcon from '@mui/icons-material/EventNote';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import { Dashboard as DashboardIcon, CalendarMonth as CalendarMonthIcon, ListAlt as ListAltIcon, AdminPanelSettings as AdminPanelSettingsIcon, Assessment as AssessmentIcon } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext.jsx';
 
 export default function Sidebar({ width, mobileOpen, onClose, isDesktop }) {
@@ -31,11 +27,29 @@ export default function Sidebar({ width, mobileOpen, onClose, isDesktop }) {
         flexDirection: 'column',
       }}
     >
-      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-        <Box component="img" src="/nirmaan-logo.png" alt="Nirmaan Logo" sx={{ height: 42, p: 0.5, borderRadius: 1 }} />
-        <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
-          MeetSpace
-        </Typography>
+      <Box
+        component={NavLink}
+        to="/"
+        sx={{
+          height: { xs: 56, sm: 64 },
+          minHeight: { xs: 56, sm: 64 },
+          boxSizing: 'border-box',
+          px: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          textDecoration: 'none',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          cursor: 'pointer',
+        }}
+      >
+        <Box
+          component="img"
+          src="/nirmaan-logo.png"
+          alt="Nirmaan Logo"
+          sx={{ height: 38, width: 'auto', maxWidth: '85%', objectFit: 'contain', flexShrink: 0 }}
+        />
       </Box>
 
       <List
@@ -53,18 +67,18 @@ export default function Sidebar({ width, mobileOpen, onClose, isDesktop }) {
         <Typography variant="overline" sx={{ px: 2, color: 'text.secondary', fontWeight: 600 }}>
           Workspace
         </Typography>
-        <NavItem to="/meeting-room/dashboard" label="📊 Dashboard" onClose={onClose} />
-        <NavItem to="/meeting-room/book" label="📅 Book Room" onClose={onClose} />
-        <NavItem to="/meeting-room/my-bookings" label="📝 My Bookings" onClose={onClose} />
+        <NavItem to="/meeting-room/dashboard" label="Dashboard" icon={<DashboardIcon />} onClose={onClose} />
+        <NavItem to="/meeting-room/book" label="Book Room" icon={<CalendarMonthIcon />} onClose={onClose} />
+        <NavItem to="/meeting-room/my-bookings" label="My Bookings" icon={<ListAltIcon />} onClose={onClose} />
 
-        {(user?.role === 'Super Admin' || user?.role === 'Admin' || user?.role === 'Manager' || user?.role === 'Department Manager') && (
+        {(user?.role === 'Super Admin' || user?.role === 'Admin') && (
           <>
             <Divider sx={{ borderColor: 'divider', my: 1 }} />
             <Typography variant="overline" sx={{ px: 2, color: 'text.secondary', fontWeight: 600 }}>
               Administration
             </Typography>
-            <NavItem to="/meeting-room/admin" label="⚙️ Admin Control" onClose={onClose} />
-            <NavItem to="/users" label="👥 Users & Roles" onClose={onClose} />
+            <NavItem to="/meeting-room/admin" label="Admin Control" icon={<AdminPanelSettingsIcon />} onClose={onClose} />
+            <NavItem to="/meeting-room/reports" label="Utilization Reports" icon={<AssessmentIcon />} onClose={onClose} />
           </>
         )}
       </List>
@@ -112,7 +126,7 @@ export default function Sidebar({ width, mobileOpen, onClose, isDesktop }) {
   );
 }
 
-function NavItem({ to, label, nested, onClose }) {
+function NavItem({ to, label, icon, nested, onClose }) {
   return (
     <ListItemButton
       component={NavLink}
@@ -134,6 +148,11 @@ function NavItem({ to, label, nested, onClose }) {
         '&:hover': { bgcolor: 'action.hover' },
       }}
     >
+      {icon && (
+        <ListItemIcon sx={{ minWidth: 36, color: 'inherit' }}>
+          {icon}
+        </ListItemIcon>
+      )}
       <ListItemText primary={label} primaryTypographyProps={{ fontSize: 14, fontWeight: 'inherit' }} />
     </ListItemButton>
   );

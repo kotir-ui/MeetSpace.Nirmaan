@@ -35,9 +35,11 @@ export default function Login() {
     api.get('/auth/config').then((r) => setForgotEnabled(!!r.data.forgot_password_enabled)).catch(() => {});
   }, []);
 
-  if (user) {
-    navigate(destination, { replace: true });
-  }
+  useEffect(() => {
+    if (user) {
+      navigate(destination, { replace: true });
+    }
+  }, [user, navigate, destination]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -66,16 +68,36 @@ export default function Login() {
     >
       <Card sx={{ width: '100%', maxWidth: 420 }}>
         <CardContent sx={{ p: 4 }}>
-          <Box sx={{ textAlign: 'center', mb: 3 }}>
+          <Box
+            onClick={() => navigate('/')}
+            sx={{
+              textAlign: 'center',
+              mb: 3,
+              cursor: 'pointer',
+              userSelect: 'none',
+              textDecoration: 'none',
+              display: 'block',
+            }}
+          >
             <Box
               component="img"
               src="/nirmaan-logo.png"
               alt="Nirmaan.org"
-              sx={{ width: '75%', maxWidth: 240, height: 'auto', mx: 'auto', display: 'block' }}
+              sx={{ width: '85%', maxWidth: 270, height: 'auto', mx: 'auto', display: 'block' }}
             />
-            <Typography variant="h6" sx={{ mt: 1.5, fontWeight: 700, color: 'text.primary' }}>
-              MeetSpace
-            </Typography>
+            <Box sx={{ mt: 1.5 }}>
+              <Typography
+                className="brand-bounce-text"
+                variant="h5"
+                sx={{
+                  fontWeight: 800,
+                  color: DARK_BLUE,
+                  letterSpacing: -0.5,
+                }}
+              >
+                MeetSpace<Typography component="span" sx={{ color: 'inherit', fontWeight: 800, fontSize: 'inherit' }}>.Nirmaan</Typography>
+              </Typography>
+            </Box>
           </Box>
 
           {error && (
@@ -130,11 +152,49 @@ export default function Login() {
               </Box>
             )}
           </form>
+
+          {/* Quick Demo Accounts */}
+          <Box sx={{ mt: 3, pt: 2.5, borderTop: '1px dashed', borderColor: 'divider' }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 1.5, textAlign: 'center' }}>
+              ⚡ Quick Demo Login Accounts
+            </Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => { setEmail('superadmin@nirmaan.org'); setPassword('Super@123'); }}
+                sx={{ textTransform: 'none', fontSize: '0.75rem', py: 0.5, borderColor: '#d32f2f', color: '#d32f2f', '&:hover': { bgcolor: '#ffebee' } }}
+              >
+                Super Admin
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => { setEmail('admin@nirmaan.org'); setPassword('Admin@123'); }}
+                sx={{ textTransform: 'none', fontSize: '0.75rem', py: 0.5, borderColor: '#1976d2', color: '#1976d2', '&:hover': { bgcolor: '#e3f2fd' } }}
+              >
+                Admin
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => { setEmail('manager@nirmaan.org'); setPassword('Manager@123'); }}
+                sx={{ textTransform: 'none', fontSize: '0.75rem', py: 0.5, borderColor: '#ed6c02', color: '#ed6c02', '&:hover': { bgcolor: '#fff3e0' } }}
+              >
+                Manager
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => { setEmail('viewer@nirmaan.org'); setPassword('Viewer@123'); }}
+                sx={{ textTransform: 'none', fontSize: '0.75rem', py: 0.5, borderColor: '#757575', color: '#757575', '&:hover': { bgcolor: '#f5f5f5' } }}
+              >
+                Viewer
+              </Button>
+            </Box>
+          </Box>
         </CardContent>
       </Card>
-
-      {/* ForgotPasswordDialog temporarily commented out for debugging */}
-      {/* <ForgotPasswordDialog open={forgotOpen} onClose={() => setForgotOpen(false)} initialEmail={email} /> */}
     </Box>
   );
 }

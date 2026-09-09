@@ -1,5 +1,6 @@
 import db from '../models/index.js';
 import { Op } from 'sequelize';
+import { sendBookingRequestMail } from '../../../services/emailService.js';
 
 const { MeetingBooking, MeetingRoom, User, Department, BookingParticipant, ApprovalRequest, Notification, BookingStatusHistory } = db;
 
@@ -281,56 +282,131 @@ export const createBooking = async (req, res) => {
       await BookingParticipant.bulkCreate(participantRecords);
     }
 
-    // Create approval request
-    let approverId = null;
-    if (departmentId) {
-      const departmentHead = await User.findOne({
-        where: { department_id: departmentId },
-        attributes: ['id'],
-      });
-      if (departmentHead) approverId = departmentHead.id;
-    }
+    // Fetch detailed requester info
+    const requester = await User.findByPk(userId, {
+      include: [
+        { model: db.Role, as: 'role', attributes: ['name'] },
+        { model: db.Department, as: 'departmentGroup', attributes: ['id', 'name', 'department_head_id'] },
+      ],
+    });
 
-    if (!approverId) {
-      const adminUser = await User.findOne({
-        where: { status: 'active' },
+    const requesterName = requester?.name || 'Employee';
+    const deptName = requester?.departmentGroup?.name || 'General';
+    const roomName = room.name || 'Meeting Room';
+
+    // 1. Resolve Manager / Department Head
+    let managerUser = null;
+    if (requester?.manager_id) {
+      managerUser = await User.findByPk(requester.manager_id);
+    }
+    if (!managerUser && requester?.department_head_id) {
+      managerUser = await User.findByPk(requester.department_head_id);
+    }
+    if (!managerUser && requester?.departmentGroup?.department_head_id) {
+      managerUser = await User.findByPk(requester.departmentGroup.department_head_id);
+    }
+    if (!managerUser && departmentId) {
+      const dept = await Department.findByPk(departmentId);
+      if (dept?.department_head_id) {
+        managerUser = await User.findByPk(dept.department_head_id);
+      }
+    }
+    if (!managerUser && departmentId) {
+      managerUser = await User.findOne({
+        where: { department_id: departmentId, status: 'active', id: { [Op.ne]: userId } },
         include: [{
           association: 'role',
-          attributes: ['id', 'name'],
-          where: { name: { [Op.in]: ['Super Admin', 'Admin'] } },
+          where: { name: { [Op.in]: ['Department Manager', 'Manager', 'Admin', 'Super Admin'] } },
         }],
       });
-      if (adminUser) approverId = adminUser.id;
     }
 
-    if (approverId && approverId !== userId) {
+    // 2. Resolve Admins and Super Admins
+    const adminUsers = await User.findAll({
+      where: { status: 'active' },
+      include: [{
+        association: 'role',
+        where: { name: { [Op.in]: ['Super Admin', 'Admin'] } },
+      }],
+    });
+
+    // 3. Create Approval Request & send alert to Manager
+    if (managerUser && managerUser.id !== userId) {
       await ApprovalRequest.create({
         meeting_booking_id: booking.id,
-        approver_id: approverId,
+        approver_id: managerUser.id,
         approver_type: 'department_head',
         status: 'pending',
       });
 
       await createNotification(
-        approverId,
-        'New Booking Request',
-        `${title} requested for ${meetingDate}`,
+        managerUser.id,
+        '📋 New Booking Request - Manager Approval Required',
+        `${requesterName} requested booking "${title}" for ${roomName} on ${meetingDate} (${startTime} - ${endTime}). Please review and approve.`,
         'booking_request',
         booking.id
       );
     }
 
+    // 4. Create Approval Request & send alert to Admins
+    for (const admin of adminUsers) {
+      if (admin.id !== userId && (!managerUser || admin.id !== managerUser.id)) {
+        try {
+          await ApprovalRequest.create({
+            meeting_booking_id: booking.id,
+            approver_id: admin.id,
+            approver_type: 'hr',
+            status: 'pending',
+          });
+        } catch (e) {
+          // ignore duplicate entry if any
+        }
+      }
+
+      if (admin.id !== userId) {
+        await createNotification(
+          admin.id,
+          `🔔 New Room Booking Request (#${bookingNumber})`,
+          `New request for "${roomName}" on ${meetingDate} (${startTime} - ${endTime}) by ${requesterName} (${deptName}). Awaiting Manager & Admin review.`,
+          'booking_request',
+          booking.id
+        );
+      }
+    }
+
     // Log status change
     await logStatusChange(booking.id, null, 'pending_department_head', userId, 'Initial booking creation');
 
-    // Notify organizer
+    // 5. Notify organizer
     await createNotification(
       userId,
-      'Booking Request Submitted',
-      `Your booking ${bookingNumber} has been submitted for approval`,
+      '✅ Booking Request Submitted',
+      `Your booking #${bookingNumber} for "${roomName}" on ${meetingDate} (${startTime} - ${endTime}) has been submitted and alerted to your Manager and Admin for approval.`,
       'success',
       booking.id
     );
+
+    // 6. Send Email alert to Manager and Admins
+    try {
+      const adminEmails = adminUsers.map((a) => a.email).filter(Boolean);
+      await sendBookingRequestMail({
+        managerEmail: managerUser?.email,
+        managerName: managerUser?.name || 'Department Manager',
+        adminEmails,
+        requesterName,
+        requesterEmail: requester?.email,
+        requesterDept: deptName,
+        roomName,
+        bookingNumber,
+        title,
+        purpose,
+        meetingDate,
+        startTime,
+        endTime,
+      });
+    } catch (mailErr) {
+      console.warn('Failed to send booking request email:', mailErr.message);
+    }
 
     res.status(201).json({ success: true, data: booking, message: 'Booking created successfully' });
   } catch (error) {

@@ -62,6 +62,18 @@ const ApprovalStatuses = [
   { key: 'rejected', label: 'Rejected', color: '#f44336' },
 ];
 
+const DEFAULT_DEPARTMENTS = [
+  { id: 1, name: 'Engineering', code: 'ENG' },
+  { id: 2, name: 'Human Resources', code: 'HR' },
+  { id: 3, name: 'Marketing', code: 'MKT' },
+  { id: 4, name: 'Sales & Business', code: 'SALES' },
+  { id: 5, name: 'Finance & Accounts', code: 'FIN' },
+  { id: 6, name: 'Operations & Facilities', code: 'OPS' },
+  { id: 7, name: 'Information Technology', code: 'IT' },
+  { id: 8, name: 'Product Management', code: 'PM' },
+  { id: 9, name: 'Management / Executive', code: 'EXEC' },
+];
+
 export default function BookingCalendarTab() {
   const { user } = useAuth();
   const location = useLocation();
@@ -69,7 +81,7 @@ export default function BookingCalendarTab() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [bookings, setBookings] = useState([]);
   const [rooms, setRooms] = useState([]);
-  const [departments, setDepartments] = useState([]);
+  const [departments, setDepartments] = useState(DEFAULT_DEPARTMENTS);
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
@@ -101,6 +113,47 @@ export default function BookingCalendarTab() {
   const [showApprovalFlow, setShowApprovalFlow] = useState(false);
 
   useEffect(() => {
+    if (user?.department && !department) {
+      setDepartment(user.department);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const fetchDepts = async () => {
+      try {
+        const response = await api.get('/departments');
+        const list = response.data?.data || (Array.isArray(response.data) ? response.data : []);
+        if (list && list.length > 0) {
+          setDepartments(list);
+        } else {
+          setDepartments(DEFAULT_DEPARTMENTS);
+        }
+      } catch (err) {
+        console.warn('Using default departments list:', err);
+        setDepartments(DEFAULT_DEPARTMENTS);
+      }
+    };
+    fetchDepts();
+  }, []);
+
+  const formatTo12HourSlot = (timeStr) => {
+    if (!timeStr) return '';
+    const clean = String(timeStr).trim();
+    if (/^\d{1,2}:\d{2}\s+(AM|PM)$/i.test(clean)) {
+      const parts = clean.split(' ');
+      const [h, m] = parts[0].split(':');
+      return `${String(parseInt(h, 10)).padStart(2, '0')}:${m} ${parts[1].toUpperCase()}`;
+    }
+    const [hStr, mStr] = clean.split(':');
+    let h = parseInt(hStr, 10) || 9;
+    const m = mStr ? mStr.slice(0, 2) : '00';
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    if (h > 12) h -= 12;
+    if (h === 0) h = 12;
+    return `${String(h).padStart(2, '0')}:${m} ${ampm}`;
+  };
+
+  useEffect(() => {
     const parameters = new URLSearchParams(location.search);
     const date = parameters.get('date');
     const start = parameters.get('startTime');
@@ -114,15 +167,28 @@ export default function BookingCalendarTab() {
         setCurrentDate(bookingDate);
       }
     }
-    if (start) setStartTime(new Date(`1970-01-01T${start}:00`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-    if (end) setEndTime(new Date(`1970-01-01T${end}:00`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    if (start) {
+      const formattedStart = formatTo12HourSlot(start);
+      if (TimeSlots.includes(formattedStart)) {
+        setStartTime(formattedStart);
+      }
+    }
+    if (end) {
+      const formattedEnd = formatTo12HourSlot(end);
+      if (TimeSlots.includes(formattedEnd)) {
+        setEndTime(formattedEnd);
+      }
+    }
     if (roomId) {
       bookingApi.getRoomDetails(roomId)
         .then((response) => {
           const room = response.data?.data;
-          if (room?.room_status === 'active') {
+          if (room) {
             setSelectedRoom(room.id);
             setSelectedRoomData(room);
+            if (room.capacity) {
+              setNumberOfPeople(String(Math.min(2, room.capacity)));
+            }
           }
         })
         .catch(() => {});
@@ -131,7 +197,6 @@ export default function BookingCalendarTab() {
 
   useEffect(() => {
     fetchBookingsForMonth();
-    api.get('/departments').then((response) => setDepartments(response.data?.data || (Array.isArray(response.data) ? response.data : []))).catch(() => setDepartments([]));
   }, [currentDate]);
 
   const fetchBookingsForMonth = async () => {
@@ -260,8 +325,11 @@ export default function BookingCalendarTab() {
   const handleSubmitBooking = async () => {
     try {
       setLoading(true);
+      const selectedDeptObj = departments.find((d) => d.name === department || d.id === department || d.department_name === department);
+      const resolvedDeptId = selectedDeptObj?.id || user?.department_id || null;
+
       const bookingData = {
-        title: meetingPurpose,
+        title: meetingPurpose || 'Meeting',
         purpose: meetingPurpose,
         meetingDate: selectedDate.getFullYear() + '-' + String(selectedDate.getMonth() + 1).padStart(2, '0') + '-' + String(selectedDate.getDate()).padStart(2, '0'),
         meeting_date: selectedDate.getFullYear() + '-' + String(selectedDate.getMonth() + 1).padStart(2, '0') + '-' + String(selectedDate.getDate()).padStart(2, '0'),
@@ -271,8 +339,9 @@ export default function BookingCalendarTab() {
         end_time: endTime,
         roomId: selectedRoom,
         room_id: selectedRoom,
-        departmentId: user?.department_id || null,
-        department_id: user?.department_id || null,
+        departmentId: resolvedDeptId,
+        department_id: resolvedDeptId,
+        department_name: department || selectedDeptObj?.name || '',
         number_of_participants: parseInt(numberOfPeople) || 1,
         participantsCount: parseInt(numberOfPeople) || 1,
         participant_names: participantNames,
@@ -286,11 +355,11 @@ export default function BookingCalendarTab() {
       await bookingApi.createBooking(bookingData);
       setSnackbar({
         open: true,
-        message: 'Meeting room booking request submitted successfully!',
+        message: 'Booking request submitted! Sent to Admin & alerted your Manager for approval.',
         severity: 'success',
       });
       setApprovalStatus('pending_manager');
-      setTimeout(() => resetForm(), 2000);
+      setTimeout(() => resetForm(), 2500);
     } catch (error) {
       console.error('Error creating booking:', error);
       setSnackbar({
@@ -447,7 +516,7 @@ export default function BookingCalendarTab() {
             {/* Selected Date Display */}
             <Box sx={{ mt: 1.5, p: 1.5, backgroundColor: '#e3f2fd', borderRadius: 1 }}>
               <Typography variant="body2" sx={{ color: '#1565c0', fontWeight: 600 }}>
-                📅 Selected: {selectedDate.toLocaleDateString('en-US', {
+                Selected: {selectedDate.toLocaleDateString('en-US', {
                   weekday: 'short',
                   month: 'short',
                   day: 'numeric',
@@ -496,7 +565,41 @@ export default function BookingCalendarTab() {
 
                 <Divider sx={{ my: 1.5 }} />
 
-                {/* Time Selection */}
+                {/* Visual Time Slot Selector */}
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5, mb: 1, display: 'block' }}>
+                    Available Time Slots (Click to choose start & end):
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, maxHeight: 150, overflowY: 'auto', p: 0.5, bgcolor: 'action.hover', borderRadius: 1.5 }}>
+                    {TimeSlots.map((time, idx) => {
+                      const isSelected = startTime === time;
+                      const isInRange = startTime && endTime && TimeSlots.indexOf(startTime) <= idx && idx <= TimeSlots.indexOf(endTime);
+                      
+                      return (
+                        <Chip
+                          key={time}
+                          label={time}
+                          size="small"
+                          onClick={() => {
+                            setStartTime(time);
+                            // Auto select next slot as end time
+                            const nextSlot = TimeSlots[idx + 1] || time;
+                            setEndTime(nextSlot);
+                          }}
+                          color={isSelected || isInRange ? 'primary' : 'default'}
+                          variant={isSelected || isInRange ? 'filled' : 'outlined'}
+                          sx={{
+                            fontWeight: isSelected || isInRange ? 700 : 500,
+                            cursor: 'pointer',
+                            fontSize: '0.75rem',
+                          }}
+                        />
+                      );
+                    })}
+                  </Box>
+                </Box>
+
+                {/* Time Selection Dropdowns */}
                 <Grid container spacing={1.5} sx={{ mb: 2 }}>
                   <Grid item xs={12} sm={6}>
                     <FormControl fullWidth size="small">
@@ -535,10 +638,27 @@ export default function BookingCalendarTab() {
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <FormControl fullWidth size="small">
-                      <InputLabel>Department</InputLabel>
-                      <Select value={department} onChange={(e) => setDepartment(e.target.value)} label="Department">
-                        <MenuItem value="">Select Department</MenuItem>
-                        {departments.map((dept) => <MenuItem key={dept.id} value={dept.name}>{dept.name}</MenuItem>)}
+                      <InputLabel id="booking-department-select-label">Department *</InputLabel>
+                      <Select
+                        labelId="booking-department-select-label"
+                        id="booking-department-select"
+                        value={department || ''}
+                        onChange={(e) => setDepartment(e.target.value)}
+                        label="Department *"
+                      >
+                        <MenuItem value="">
+                          <em>Select Department</em>
+                        </MenuItem>
+                        {departments.map((dept) => {
+                          const deptName = typeof dept === 'string' ? dept : (dept.name || dept.department_name || '');
+                          const deptKey = (dept && dept.id) ? dept.id : deptName;
+                          if (!deptName) return null;
+                          return (
+                            <MenuItem key={deptKey} value={deptName}>
+                              {deptName}
+                            </MenuItem>
+                          );
+                        })}
                       </Select>
                     </FormControl>
                   </Grid>
@@ -672,16 +792,16 @@ export default function BookingCalendarTab() {
                               </Box>
                               <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 0.8, mb: 0.8 }}>
                                 <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
-                                  📍 Room #{room.room_number}
+                                  Room #{room.room_number}
                                 </Typography>
                                 <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
-                                  👥 Capacity: {room.capacity}
+                                  Capacity: {room.capacity}
                                 </Typography>
                                 <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
-                                  🏢 Building: {room.building || 'N/A'}
+                                  Building: {room.building || 'N/A'}
                                 </Typography>
                                 <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
-                                  📊 Floor: {room.floor || 'N/A'}
+                                  Floor: {room.floor || 'N/A'}
                                 </Typography>
                               </Box>
 

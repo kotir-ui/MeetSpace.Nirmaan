@@ -17,18 +17,16 @@ router.use(requireAuth);
  */
 router.get(
   '/',
-  requirePermission('Departments', 'View'),
   departmentManagementController.getAllDepartments
 );
 
 /**
  * @route   GET /api/departments/:id
  * @desc    Get single department by ID with members and statistics
- * @access  Private - Requires 'Departments.View' permission
+ * @access  Private
  */
 router.get(
   '/:id',
-  requirePermission('Departments', 'View'),
   departmentManagementController.getDepartmentById
 );
 

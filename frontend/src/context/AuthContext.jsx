@@ -44,12 +44,20 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const updateProfile = async (data) => {
+    const res = await api.put('/auth/profile', data);
+    localStorage.setItem('user', JSON.stringify(res.data.user));
+    setUser(res.data.user);
+    return res.data;
+  };
+
   const value = useMemo(
     () => ({
       user,
       loading,
       login,
       logout,
+      updateProfile,
       isSuperAdmin: user?.role === 'Super Admin',
       isAdmin: user?.role === 'Super Admin' || user?.role === 'Admin',
       isManager: user?.role === 'Manager',

@@ -17,28 +17,29 @@ import {
   Chip,
 } from '@mui/material';
 import { useState, useEffect } from 'react';
-import MenuIcon from '@mui/icons-material/Menu';
-import DarkModeIcon from '@mui/icons-material/DarkMode';
-import LightModeIcon from '@mui/icons-material/LightMode';
-import LogoutIcon from '@mui/icons-material/Logout';
-import LockResetIcon from '@mui/icons-material/LockReset';
-import NotificationsIcon from '@mui/icons-material/Notifications';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { Menu as MenuIcon, DarkMode as DarkModeIcon, LightMode as LightModeIcon, Logout as LogoutIcon, LockReset as LockResetIcon, Notifications as NotificationsIcon, AccountCircle as AccountCircleIcon } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useColorMode } from '../context/ColorModeContext.jsx';
 import api from '../api/client.js';
 import ChangePasswordDialog from '../components/ChangePasswordDialog.jsx';
+import EditProfileDialog from '../components/EditProfileDialog.jsx';
 
 const NOTIF_COLOR = { info: '#2563EB', success: '#16A34A', warning: '#F59E0B', error: '#DC2626' };
 
 export default function Header({ onMenuClick }) {
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { mode, toggle } = useColorMode();
   const [anchor, setAnchor] = useState(null);
   const [notifAnchor, setNotifAnchor] = useState(null);
   const [pwOpen, setPwOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [settings, setSettings] = useState({});
   const [notifications, setNotifications] = useState([]);
   const [unread, setUnread] = useState(0);
+
+  const isAdmin = user?.role === 'Admin' || user?.role === 'Super Admin' || user?.role_name === 'Admin' || user?.role_name === 'Super Admin' || user?.role?.name === 'Admin' || user?.role?.name === 'Super Admin';
 
   const loadNotifications = () =>
     api
@@ -58,6 +59,23 @@ export default function Header({ onMenuClick }) {
     setNotifications((ns) => ns.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
     setUnread((u) => Math.max(0, u - 1));
   };
+
+  const handleNotificationClick = (n) => {
+    markOneRead(n.id);
+    setNotifAnchor(null);
+
+    const title = (n.title || '').toLowerCase();
+    const msg = (n.message || '').toLowerCase();
+    const isApprovalRelated = title.includes('request') || title.includes('approval') || msg.includes('approval') || msg.includes('review') || n.type === 'booking_request' || n.type === 'approval_required';
+
+    if (isAdmin && isApprovalRelated) {
+      navigate('/meeting-room/admin?tab=approvals');
+    } else if (title.includes('confirmed') || title.includes('approved') || title.includes('rejected') || title.includes('booking') || isApprovalRelated) {
+      navigate('/meeting-room/my-bookings');
+    } else if (n.action_url) {
+      navigate(n.action_url);
+    }
+  };
   const markAllRead = async () => {
     await api.patch('/notifications/read-all').catch(() => {});
     setNotifications((ns) => ns.map((n) => ({ ...n, is_read: true })));
@@ -75,21 +93,60 @@ export default function Header({ onMenuClick }) {
       position="sticky"
       elevation={0}
       color="inherit"
-      sx={{ bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider' }}
+      sx={{
+        bgcolor: 'background.paper',
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+        height: { xs: 56, sm: 64 },
+        minHeight: { xs: 56, sm: 64 },
+        justifyContent: 'center',
+        boxSizing: 'border-box',
+      }}
     >
-      <Toolbar sx={{ gap: 1 }}>
+      <Toolbar
+        sx={{
+          height: { xs: 56, sm: 64 },
+          minHeight: { xs: '56px !important', sm: '64px !important' },
+          gap: 1,
+          px: { xs: 2, sm: 3 },
+        }}
+      >
         <IconButton edge="start" onClick={onMenuClick} sx={{ display: { lg: 'none' } }}>
-          ☰
+          <MenuIcon />
         </IconButton>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }} />
+        <Box
+          component={NavLink}
+          to="/"
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            textDecoration: 'none',
+            cursor: 'pointer',
+            ml: { xs: 0.5, sm: 1 },
+          }}
+        >
+          <Typography
+            className="brand-bounce-text"
+            variant="h6"
+            sx={{
+              fontWeight: 800,
+              color: 'text.primary',
+              letterSpacing: -0.5,
+              fontSize: { xs: '1.05rem', sm: '1.2rem' },
+              userSelect: 'none',
+            }}
+          >
+            MeetSpace<Typography component="span" sx={{ color: 'inherit', fontWeight: 800, fontSize: 'inherit' }}>.Nirmaan</Typography>
+          </Typography>
+        </Box>
 
         <Box sx={{ flexGrow: 1 }} />
 
         <Tooltip title="Notifications">
           <IconButton onClick={(e) => { setNotifAnchor(e.currentTarget); loadNotifications(); }}>
             <Badge badgeContent={unread} color="error" max={99}>
-              <span style={{ fontSize: '20px' }}>🔔</span>
+              <NotificationsIcon />
             </Badge>
           </IconButton>
         </Tooltip>
@@ -116,7 +173,7 @@ export default function Header({ onMenuClick }) {
             {notifications.map((n) => (
               <ListItemButton
                 key={n.id}
-                onClick={() => markOneRead(n.id)}
+                onClick={() => handleNotificationClick(n)}
                 sx={{ bgcolor: n.is_read ? 'transparent' : 'action.hover' }}
               >
                 <ListItemIcon sx={{ minWidth: 28 }}>
@@ -155,7 +212,7 @@ export default function Header({ onMenuClick }) {
 
         <Tooltip title={mode === 'dark' ? 'Light mode' : 'Dark mode'}>
           <IconButton onClick={toggle}>
-            {mode === 'dark' ? '☀️' : '🌙'}
+            {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
           </IconButton>
         </Tooltip>
 
@@ -173,17 +230,21 @@ export default function Header({ onMenuClick }) {
             </Typography>
           </Box>
           <Divider />
+          <MenuItem onClick={() => { setAnchor(null); setProfileOpen(true); }}>
+            <ListItemIcon><AccountCircleIcon fontSize="small" /></ListItemIcon> My Profile
+          </MenuItem>
           {settings.change_password_enabled && (
             <MenuItem onClick={() => { setAnchor(null); setPwOpen(true); }}>
-              🔐 Change Password
+              <ListItemIcon><LockResetIcon fontSize="small" /></ListItemIcon> Change Password
             </MenuItem>
           )}
           <MenuItem onClick={logout}>
-            🚪 Logout
+            <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon> Logout
           </MenuItem>
         </Menu>
 
         <ChangePasswordDialog open={pwOpen} onClose={() => setPwOpen(false)} />
+        <EditProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)} />
       </Toolbar>
     </AppBar>
   );

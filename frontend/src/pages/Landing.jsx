@@ -11,28 +11,56 @@ import {
   Chip,
   AppBar,
   Toolbar,
+  Link as MuiLink,
 } from '@mui/material';
+import {
+  MeetingRoomRounded as MeetingRoomRoundedIcon,
+  CalendarMonthRounded as CalendarMonthRoundedIcon,
+  FactCheckRounded as FactCheckRoundedIcon,
+  ManageAccountsRounded as ManageAccountsRoundedIcon,
+  ArrowForward as ArrowForwardIcon,
+  Login as LoginIcon,
+  Email as EmailIcon,
+  LocationOn as LocationOnIcon,
+  Language as LanguageIcon,
+  CheckCircle as CheckCircleIcon,
+} from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext.jsx';
 import { DARK_BLUE } from '../theme.js';
 
+const NAV_LINKS = [
+  { label: 'Home', href: '#home' },
+  { label: 'Services', href: '#services' },
+  { label: 'About Us', href: '#about' },
+  { label: 'Contact', href: '#contact' },
+];
+
 const FEATURES = [
   {
-    emoji: '🏢',
+    icon: <MeetingRoomRoundedIcon sx={{ fontSize: 28, color: '#2563EB' }} />,
+    bg: 'rgba(37, 99, 235, 0.1)',
+    border: 'rgba(37, 99, 235, 0.2)',
     title: 'Meeting Room Booking',
     desc: 'Reserve conference rooms, inspect capacity, facilities (Projector, VC, Whiteboard), and book time slots with live conflict checking.',
   },
   {
-    emoji: '📅',
+    icon: <CalendarMonthRoundedIcon sx={{ fontSize: 28, color: '#0284C7' }} />,
+    bg: 'rgba(2, 132, 199, 0.1)',
+    border: 'rgba(2, 132, 199, 0.2)',
     title: 'Interactive Schedule Calendar',
     desc: 'View real-time room availability across the entire organization with day and week calendar schedules.',
   },
   {
-    emoji: '✅',
+    icon: <FactCheckRoundedIcon sx={{ fontSize: 28, color: '#059669' }} />,
+    bg: 'rgba(5, 150, 105, 0.1)',
+    border: 'rgba(5, 150, 105, 0.2)',
     title: 'Multi-Stage Approvals',
     desc: 'Automated workflow with Department Head and HR approvals to manage and approve room allocations effortlessly.',
   },
   {
-    emoji: '👤',
+    icon: <ManageAccountsRoundedIcon sx={{ fontSize: 28, color: '#7C3AED' }} />,
+    bg: 'rgba(124, 58, 237, 0.1)',
+    border: 'rgba(124, 58, 237, 0.2)',
     title: 'User & Role Management',
     desc: 'Role-based access control for Super Admins, Admins, Managers, and Viewers across all Nirmaan departments.',
   },
@@ -51,44 +79,128 @@ export default function Landing() {
 
   const handleLaunch = () => navigate(user ? '/meeting-room' : '/login');
 
+  const scrollToSection = (e, href) => {
+    e.preventDefault();
+    if (href === '#home') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    const elem = document.querySelector(href);
+    if (elem) {
+      const navHeight = 65;
+      const elementPosition = elem.getBoundingClientRect().top + window.pageYOffset;
+      const offsetPosition = elementPosition - navHeight;
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth',
+      });
+    }
+  };
+
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', scrollBehavior: 'smooth' }}>
       {/* Navigation Bar */}
       <AppBar
         position="sticky"
         elevation={0}
-        sx={{ bgcolor: '#fff', color: DARK_BLUE, borderBottom: '1px solid', borderColor: 'divider' }}
+        sx={{ bgcolor: '#fff', color: DARK_BLUE, borderBottom: '1px solid', borderColor: 'divider', zIndex: 1100 }}
       >
-        <Toolbar sx={{ gap: 2, px: { xs: 2, sm: 4 } }}>
-          <Box component="img" src="/nirmaan-logo.png" alt="Nirmaan Logo" sx={{ height: 38 }} />
-          <Typography variant="h6" sx={{ fontWeight: 800, color: DARK_BLUE, letterSpacing: -0.5 }}>
-            MeetSpace<Typography component="span" sx={{ color: '#1B4EF5', fontWeight: 800, fontSize: 'inherit' }}>.Nirmaan</Typography>
-          </Typography>
-          <Box sx={{ flexGrow: 1 }} />
+        <Toolbar sx={{ px: { xs: 2, sm: 4 }, py: 0.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {/* Logo & Brand */}
+          <Box
+            onClick={() => navigate('/')}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              cursor: 'pointer',
+              textDecoration: 'none',
+              userSelect: 'none',
+            }}
+          >
+            <Box
+              component="img"
+              src="/nirmaan-logo.png"
+              alt="Nirmaan Logo"
+              sx={{ height: 48, width: 'auto', objectFit: 'contain' }}
+            />
+            <Typography
+              className="brand-bounce-text"
+              variant="h6"
+              sx={{
+                fontWeight: 800,
+                color: DARK_BLUE,
+                letterSpacing: -0.5,
+                fontSize: { xs: '1.1rem', sm: '1.25rem' },
+              }}
+            >
+              MeetSpace<Typography component="span" sx={{ color: 'inherit', fontWeight: 800, fontSize: 'inherit' }}>.Nirmaan</Typography>
+            </Typography>
+          </Box>
+
+          {/* Primary Navigation Links - Centered in Header */}
+          <Stack
+            direction="row"
+            spacing={4}
+            sx={{
+              display: { xs: 'none', md: 'flex' },
+              alignItems: 'center',
+              mx: 'auto',
+            }}
+          >
+            {NAV_LINKS.map((link) => (
+              <MuiLink
+                key={link.label}
+                href={link.href}
+                onClick={(e) => scrollToSection(e, link.href)}
+                sx={{
+                  color: 'text.secondary',
+                  fontWeight: 600,
+                  fontSize: '0.95rem',
+                  textDecoration: 'none',
+                  py: 0.5,
+                  transition: 'color 0.2s',
+                  '&:hover': {
+                    color: DARK_BLUE,
+                  },
+                }}
+              >
+                {link.label}
+              </MuiLink>
+            ))}
+          </Stack>
+
+          {/* Sign In CTA */}
           <Button
             variant="contained"
             color="primary"
             onClick={handleLaunch}
+            startIcon={<LoginIcon />}
             sx={{ fontWeight: 700, px: 3, borderRadius: 2 }}
           >
-            📅 {user ? 'Open Dashboard' : 'Sign In'}
+            Sign In
           </Button>
         </Toolbar>
       </AppBar>
 
-      {/* Hero Section */}
+      {/* 1. HERO SECTION (1 Full Screen) */}
       <Box
+        id="home"
         sx={{
           background: `linear-gradient(135deg, ${DARK_BLUE} 0%, #123B63 60%, #0A2947 100%)`,
           color: '#fff',
-          py: { xs: 8, md: 11 },
+          minHeight: 'calc(100vh - 65px)',
+          display: 'flex',
+          alignItems: 'center',
+          py: { xs: 6, md: 4 },
           position: 'relative',
           overflow: 'hidden',
+          boxSizing: 'border-box',
         }}
       >
         <Container maxWidth="lg">
-          <Grid container spacing={5} alignItems="center">
-            <Grid item xs={12} md={7}>
+          <Grid container spacing={{ xs: 4, md: 5 }} alignItems="center">
+            <Grid item xs={12} md={6.5}>
               <Chip
                 label="Enterprise Meeting Management"
                 sx={{
@@ -104,7 +216,7 @@ export default function Landing() {
                 sx={{
                   fontWeight: 800,
                   lineHeight: 1.15,
-                  fontSize: { xs: 32, md: 48 },
+                  fontSize: { xs: 30, sm: 38, md: 44 },
                   letterSpacing: -0.5,
                 }}
               >
@@ -113,70 +225,113 @@ export default function Landing() {
               <Typography
                 variant="h6"
                 sx={{
-                  mt: 2.5,
+                  mt: 2,
                   color: 'rgba(255,255,255,0.85)',
                   fontWeight: 400,
-                  lineHeight: 1.6,
-                  fontSize: { xs: '1rem', md: '1.15rem' },
+                  lineHeight: 1.55,
+                  fontSize: { xs: '0.95rem', md: '1.05rem' },
                 }}
               >
                 Seamlessly schedule conference rooms, coordinate multi-stage manager & HR approvals, prevent meeting conflicts, and manage organizational facilities in one central platform.
               </Typography>
 
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mt: 4 }}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mt: 3.5 }}>
                 <Button
                   size="large"
                   variant="contained"
                   color="secondary"
                   onClick={handleLaunch}
+                  startIcon={<MeetingRoomRoundedIcon />}
+                  endIcon={<ArrowForwardIcon />}
                   sx={{
-                    py: 1.5,
+                    py: 1.3,
                     px: 3.5,
                     fontWeight: 700,
-                    fontSize: '1.05rem',
+                    fontSize: '1rem',
                     borderRadius: 2,
                     boxShadow: '0 8px 24px rgba(27,78,245,0.3)',
                   }}
                 >
-                  📅 {user ? 'Enter MeetSpace' : 'Book a Meeting Room'} →
+                  {user ? 'Enter MeetSpace' : 'Book a Meeting Room'}
                 </Button>
               </Stack>
             </Grid>
 
-            <Grid item xs={12} md={5} sx={{ display: 'flex', justifyContent: 'center' }}>
+            <Grid item xs={12} md={5.5} sx={{ display: 'flex', justifyContent: { xs: 'center', md: 'flex-end' } }}>
               <Box
                 sx={{
-                  bgcolor: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  backdropFilter: 'blur(12px)',
-                  borderRadius: 4,
-                  p: 3,
+                  bgcolor: 'rgba(255,255,255,0.07)',
+                  border: '1px solid rgba(255,255,255,0.18)',
+                  backdropFilter: 'blur(16px)',
+                  borderRadius: 3.5,
+                  p: { xs: 2, sm: 2.5 },
                   width: '100%',
-                  maxWidth: 420,
+                  maxWidth: 460,
                   boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
                 }}
               >
-                <Typography variant="subtitle2" sx={{ color: 'rgba(255,255,255,0.7)', mb: 2, textTransform: 'uppercase', letterSpacing: 1 }}>
-                  Meeting Rooms Preview
-                </Typography>
-                <Stack spacing={1.5}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5, px: 0.5 }}>
+                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.75)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.2 }}>
+                    Meeting Rooms Preview
+                  </Typography>
+                  <Chip
+                    label="4 Rooms Configured"
+                    size="small"
+                    sx={{
+                      bgcolor: 'rgba(255,255,255,0.15)',
+                      color: '#fff',
+                      fontSize: '0.7rem',
+                      fontWeight: 600,
+                      height: 20,
+                    }}
+                  />
+                </Box>
+                <Stack spacing={1.2}>
                   {ROOMS_PREVIEW.map((room) => (
                     <Box
                       key={room.code}
                       sx={{
-                        p: 1.5,
+                        py: 1,
+                        px: 1.5,
                         borderRadius: 2,
                         bgcolor: 'rgba(255,255,255,0.08)',
-                        border: '1px solid rgba(255,255,255,0.08)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          bgcolor: 'rgba(255,255,255,0.14)',
+                          borderColor: 'rgba(255,255,255,0.2)',
+                          transform: 'translateX(2px)',
+                        },
                       }}
                     >
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: '#fff' }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: 700,
+                            color: '#fff',
+                            fontSize: '0.88rem',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
                           {room.name}
                         </Typography>
-                        <Chip label={room.code} size="small" sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: '#fff', fontWeight: 600, height: 20 }} />
+                        <Chip
+                          label={room.code}
+                          size="small"
+                          sx={{
+                            bgcolor: 'rgba(255,255,255,0.22)',
+                            color: '#fff',
+                            fontWeight: 700,
+                            fontSize: '0.72rem',
+                            height: 20,
+                            minWidth: 52,
+                          }}
+                        />
                       </Box>
-                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.73rem', display: 'block', mt: 0.25 }}>
                         Capacity: {room.cap} people • {room.floor}
                       </Typography>
                     </Box>
@@ -188,48 +343,499 @@ export default function Landing() {
         </Container>
       </Box>
 
-      {/* Core Features */}
-      <Container maxWidth="lg" sx={{ py: 9 }}>
-        <Box sx={{ textAlign: 'center', mb: 6 }}>
-          <Chip label="Portal Capabilities" color="primary" size="small" sx={{ fontWeight: 700, mb: 1.5 }} />
-          <Typography variant="h4" sx={{ fontWeight: 800, color: DARK_BLUE }}>
-            Engineered for Efficient Collaboration
-          </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mt: 1, maxWidth: 600, mx: 'auto' }}>
-            Everything teams need to find available spaces, coordinate attendees, and manage booking approvals.
-          </Typography>
-        </Box>
+      {/* 2. SERVICES SECTION (1 Full Screen) */}
+      <Box
+        id="services"
+        sx={{
+          minHeight: 'calc(100vh - 65px)',
+          display: 'flex',
+          alignItems: 'center',
+          py: { xs: 6, md: 4 },
+          bgcolor: 'background.paper',
+          boxSizing: 'border-box',
+        }}
+      >
+        <Container maxWidth="lg">
+          <Box sx={{ textAlign: 'center', mb: 4.5 }}>
+            <Chip label="Portal Services & Capabilities" color="primary" size="small" sx={{ fontWeight: 700, mb: 1.5 }} />
+            <Typography variant="h4" sx={{ fontWeight: 800, color: DARK_BLUE, fontSize: { xs: '1.8rem', md: '2.2rem' } }}>
+              Engineered for Efficient Collaboration
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mt: 1, maxWidth: 620, mx: 'auto', fontSize: { xs: '0.9rem', md: '1rem' } }}>
+              Everything teams need to find available spaces, coordinate attendees, and manage booking approvals smoothly.
+            </Typography>
+          </Box>
 
-        <Grid container spacing={3}>
-          {FEATURES.map((feat) => (
-            <Grid item xs={12} sm={6} md={3} key={feat.title}>
+          <Grid container spacing={3}>
+            {FEATURES.map((feat) => (
+              <Grid item xs={12} sm={6} md={3} key={feat.title}>
+                <Card
+                  elevation={0}
+                  sx={{
+                    height: '100%',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 3,
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                    '&:hover': { transform: 'translateY(-4px)', boxShadow: 3 },
+                  }}
+                >
+                  <CardContent sx={{ p: 3.5, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', height: '100%' }}>
+                    <Box
+                      sx={{
+                        mb: 2.5,
+                        width: 58,
+                        height: 58,
+                        borderRadius: 3,
+                        bgcolor: feat.bg,
+                        border: '1px solid',
+                        borderColor: feat.border,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        mx: 'auto',
+                        transition: 'transform 0.2s',
+                      }}
+                    >
+                      {feat.icon}
+                    </Box>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1, color: DARK_BLUE, textAlign: 'center' }}>
+                      {feat.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6, textAlign: 'center' }}>
+                      {feat.desc}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Container>
+      </Box>
+
+      {/* 3. ABOUT US SECTION (1 Full Screen) */}
+      <Box
+        id="about"
+        sx={{
+          minHeight: 'calc(100vh - 65px)',
+          display: 'flex',
+          alignItems: 'center',
+          py: { xs: 6, md: 4 },
+          bgcolor: 'background.default',
+          boxSizing: 'border-box',
+        }}
+      >
+        <Container maxWidth="lg">
+          <Grid container spacing={5} alignItems="center">
+            <Grid item xs={12} md={6}>
+              <Chip label="About Nirmaan" color="primary" size="small" sx={{ fontWeight: 700, mb: 1.5 }} />
+              <Typography variant="h4" sx={{ fontWeight: 800, color: DARK_BLUE, mb: 2, fontSize: { xs: '1.8rem', md: '2.2rem' } }}>
+                Empowering Social Innovation & Productive Workspaces
+              </Typography>
+              <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.65, mb: 3, fontSize: { xs: '0.9rem', md: '0.98rem' } }}>
+                Nirmaan is dedicated to driving impactful social transformation across education, skill development, and community welfare. MeetSpace.Nirmaan is our intelligent workspace management portal built to streamline institutional productivity, meetings, and cross-team coordination.
+              </Typography>
+
+              <Stack spacing={1.5}>
+                {[
+                  'Real-time conflict prevention across all meeting venues',
+                  'Automated hierarchy approvals for department managers & HR',
+                  'Full equipment and facility readiness (VC, Projector, Mic, Audio)',
+                ].map((item) => (
+                  <Box key={item} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <CheckCircleIcon sx={{ color: '#059669', fontSize: 20 }} />
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                      {item}
+                    </Typography>
+                  </Box>
+                ))}
+              </Stack>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Box
+                sx={{
+                  bgcolor: '#fff',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 3.5,
+                  p: { xs: 3, sm: 4 },
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
+                }}
+              >
+                <Typography variant="h6" sx={{ fontWeight: 800, color: DARK_BLUE, mb: 2.5, fontSize: '1.1rem' }}>
+                  Portal Highlights & Operational Stats
+                </Typography>
+                <Grid container spacing={2}>
+                  {[
+                    { value: '4+', label: 'Dedicated Meeting Suites' },
+                    { value: '100%', label: 'Conflict-Free Scheduling' },
+                    { value: '2-Stage', label: 'Automated Manager Approvals' },
+                    { value: '24/7', label: 'Real-time Portal Availability' },
+                  ].map((stat) => (
+                    <Grid item xs={6} key={stat.label}>
+                      <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2 }}>
+                        <Typography variant="h4" sx={{ fontWeight: 800, color: 'primary.main', mb: 0.5, fontSize: { xs: '1.6rem', md: '2rem' } }}>
+                          {stat.value}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                          {stat.label}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  ))}
+                </Grid>
+              </Box>
+            </Grid>
+          </Grid>
+        </Container>
+      </Box>
+
+      {/* 4. CONTACT & FOOTER SECTION (1 Full Screen Together) */}
+      <Box
+        id="contact"
+        sx={{
+          minHeight: 'calc(100vh - 65px)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          bgcolor: 'background.paper',
+          boxSizing: 'border-box',
+        }}
+      >
+        {/* Contact Content */}
+        <Container maxWidth="lg" sx={{ py: { xs: 4, md: 5 }, flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <Box sx={{ textAlign: 'center', mb: 3.5 }}>
+            <Chip label="Get in Touch" color="primary" size="small" sx={{ fontWeight: 700, mb: 1 }} />
+            <Typography variant="h4" sx={{ fontWeight: 800, color: DARK_BLUE, fontSize: { xs: '1.6rem', md: '2rem' } }}>
+              Contact & Portal Support
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, maxWidth: 580, mx: 'auto' }}>
+              Have questions regarding meeting room allocations, credentials, or facility maintenance? Our operations team is here to assist you.
+            </Typography>
+          </Box>
+
+          <Grid container spacing={3} justifyContent="center">
+            {/* Card 1: Head Office */}
+            <Grid item xs={12} sm={6} md={4}>
               <Card
                 elevation={0}
                 sx={{
-                  height: '100%',
                   border: '1px solid',
                   borderColor: 'divider',
-                  borderRadius: 3,
-                  transition: 'transform 0.2s, box-shadow 0.2s',
-                  '&:hover': { transform: 'translateY(-4px)', boxShadow: 3 },
+                  borderRadius: 3.5,
+                  p: 3,
+                  textAlign: 'center',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  transition: 'all 0.25s ease',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: '0 10px 25px rgba(0,0,0,0.06)',
+                    borderColor: 'primary.light',
+                  },
                 }}
               >
-                <CardContent sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%' }}>
-                  <Box sx={{ mb: 2, fontSize: 40 }}>
-                    {feat.emoji}
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                  <Box
+                    sx={{
+                      width: 52,
+                      height: 52,
+                      borderRadius: 2.5,
+                      bgcolor: 'rgba(37, 99, 235, 0.1)',
+                      border: '1px solid rgba(37, 99, 235, 0.2)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      mb: 1.5,
+                    }}
+                  >
+                    <LocationOnIcon sx={{ fontSize: 26, color: '#2563EB' }} />
                   </Box>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1, color: DARK_BLUE }}>
-                    {feat.title}
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, color: DARK_BLUE, mb: 0.5 }}>
+                    Head Office
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                    {feat.desc}
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', mb: 0.25 }}>
+                    Nirmaan Organization
                   </Typography>
-                </CardContent>
+                  <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.4, display: 'block' }}>
+                    Hyderabad, Telangana, India
+                  </Typography>
+                </Box>
+                <MuiLink
+                  href="https://maps.google.com/?q=Nirmaan+Organization+Hyderabad"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{
+                    mt: 2,
+                    fontWeight: 700,
+                    fontSize: '0.82rem',
+                    color: 'primary.main',
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    '&:hover': { textDecoration: 'underline' },
+                  }}
+                >
+                  View on Map ↗
+                </MuiLink>
               </Card>
             </Grid>
-          ))}
-        </Grid>
-      </Container>
+
+            {/* Card 2: Email Us */}
+            <Grid item xs={12} sm={6} md={4}>
+              <Card
+                elevation={0}
+                sx={{
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 3.5,
+                  p: 3,
+                  textAlign: 'center',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  transition: 'all 0.25s ease',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: '0 10px 25px rgba(0,0,0,0.06)',
+                    borderColor: '#059669',
+                  },
+                }}
+              >
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                  <Box
+                    sx={{
+                      width: 52,
+                      height: 52,
+                      borderRadius: 2.5,
+                      bgcolor: 'rgba(5, 150, 105, 0.1)',
+                      border: '1px solid rgba(5, 150, 105, 0.2)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      mb: 1.5,
+                    }}
+                  >
+                    <EmailIcon sx={{ fontSize: 26, color: '#059669' }} />
+                  </Box>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, color: DARK_BLUE, mb: 0.5 }}>
+                    Email Support
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', mb: 0.25 }}>
+                    contact@nirmaan.org
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.4, display: 'block' }}>
+                    Quick response for portal queries
+                  </Typography>
+                </Box>
+                <MuiLink
+                  href="mailto:contact@nirmaan.org"
+                  sx={{
+                    mt: 2,
+                    fontWeight: 700,
+                    fontSize: '0.82rem',
+                    color: '#059669',
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    '&:hover': { textDecoration: 'underline' },
+                  }}
+                >
+                  Send an Email →
+                </MuiLink>
+              </Card>
+            </Grid>
+
+            {/* Card 3: Official Website */}
+            <Grid item xs={12} sm={6} md={4}>
+              <Card
+                elevation={0}
+                sx={{
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 3.5,
+                  p: 3,
+                  textAlign: 'center',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  transition: 'all 0.25s ease',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: '0 10px 25px rgba(0,0,0,0.06)',
+                    borderColor: '#0284C7',
+                  },
+                }}
+              >
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                  <Box
+                    sx={{
+                      width: 52,
+                      height: 52,
+                      borderRadius: 2.5,
+                      bgcolor: 'rgba(2, 132, 199, 0.1)',
+                      border: '1px solid rgba(2, 132, 199, 0.2)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      mb: 1.5,
+                    }}
+                  >
+                    <LanguageIcon sx={{ fontSize: 26, color: '#0284C7' }} />
+                  </Box>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, color: DARK_BLUE, mb: 0.5 }}>
+                    Official Portal
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', mb: 0.25 }}>
+                    www.nirmaan.org
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.4, display: 'block' }}>
+                    Discover programs & initiatives
+                  </Typography>
+                </Box>
+                <MuiLink
+                  href="https://nirmaan.org"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{
+                    mt: 2,
+                    fontWeight: 700,
+                    fontSize: '0.82rem',
+                    color: '#0284C7',
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    '&:hover': { textDecoration: 'underline' },
+                  }}
+                >
+                  Visit Website ↗
+                </MuiLink>
+              </Card>
+            </Grid>
+          </Grid>
+        </Container>
+
+        {/* Integrated Clean Footer */}
+        <Box sx={{ bgcolor: DARK_BLUE, color: 'rgba(255,255,255,0.85)', pt: 4, pb: 3 }}>
+          <Container maxWidth="lg">
+            <Grid container spacing={4}>
+              {/* Column 1: Brand Info */}
+              <Grid item xs={12} md={4}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                  <Box
+                    component="img"
+                    src="/nirmaan-logo.png"
+                    alt="Nirmaan Logo"
+                    sx={{ height: 38, width: 'auto', bgcolor: '#fff', p: 0.5, borderRadius: 1.5 }}
+                  />
+                  <Typography variant="h6" sx={{ fontWeight: 800, color: '#fff', letterSpacing: -0.5, fontSize: '1.1rem' }}>
+                    MeetSpace.Nirmaan
+                  </Typography>
+                </Box>
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, display: 'block', maxWidth: 300, mb: 1 }}>
+                  Enterprise meeting room reservation and schedule coordination portal for Nirmaan Organization.
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', display: 'block' }}>
+                  © {new Date().getFullYear()} Nirmaan Organization. All rights reserved.
+                </Typography>
+              </Grid>
+
+              {/* Column 2: Quick Links */}
+              <Grid item xs={6} sm={4} md={2.5}>
+                <Typography variant="subtitle2" sx={{ color: '#fff', fontWeight: 700, mb: 1.5, textTransform: 'uppercase', letterSpacing: 0.8, fontSize: '0.8rem' }}>
+                  Quick Links
+                </Typography>
+                <Stack spacing={0.8}>
+                  {NAV_LINKS.map((link) => (
+                    <MuiLink
+                      key={link.label}
+                      href={link.href}
+                      onClick={(e) => scrollToSection(e, link.href)}
+                      sx={{
+                        color: 'rgba(255,255,255,0.7)',
+                        fontSize: '0.82rem',
+                        textDecoration: 'none',
+                        transition: 'color 0.2s',
+                        '&:hover': { color: '#fff' },
+                      }}
+                    >
+                      {link.label}
+                    </MuiLink>
+                  ))}
+                </Stack>
+              </Grid>
+
+              {/* Column 3: Resources */}
+              <Grid item xs={6} sm={4} md={2.5}>
+                <Typography variant="subtitle2" sx={{ color: '#fff', fontWeight: 700, mb: 1.5, textTransform: 'uppercase', letterSpacing: 0.8, fontSize: '0.8rem' }}>
+                  Resources
+                </Typography>
+                <Stack spacing={0.8}>
+                  {[
+                    { label: 'Help Center', href: '#contact' },
+                    { label: 'Room Guidelines', href: '#services' },
+                    { label: 'Privacy Policy', href: '#home' },
+                    { label: 'Terms of Service', href: '#home' },
+                  ].map((item) => (
+                    <MuiLink
+                      key={item.label}
+                      href={item.href}
+                      onClick={(e) => scrollToSection(e, item.href)}
+                      sx={{
+                        color: 'rgba(255,255,255,0.7)',
+                        fontSize: '0.82rem',
+                        textDecoration: 'none',
+                        transition: 'color 0.2s',
+                        '&:hover': { color: '#fff' },
+                      }}
+                    >
+                      {item.label}
+                    </MuiLink>
+                  ))}
+                </Stack>
+              </Grid>
+
+              {/* Column 4: Contact Details */}
+              <Grid item xs={12} sm={4} md={3}>
+                <Typography variant="subtitle2" sx={{ color: '#fff', fontWeight: 700, mb: 1.5, textTransform: 'uppercase', letterSpacing: 0.8, fontSize: '0.8rem' }}>
+                  Contact & Support
+                </Typography>
+                <Stack spacing={1}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                    <LocationOnIcon sx={{ fontSize: 16, color: '#38BDF8', mt: 0.2 }} />
+                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.78rem' }}>
+                      Nirmaan Organization, Hyderabad, India
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <EmailIcon sx={{ fontSize: 16, color: '#38BDF8' }} />
+                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.78rem' }}>
+                      contact@nirmaan.org
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <LanguageIcon sx={{ fontSize: 16, color: '#38BDF8' }} />
+                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.78rem' }}>
+                      www.nirmaan.org
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Grid>
+            </Grid>
+          </Container>
+        </Box>
+      </Box>
     </Box>
   );
 }

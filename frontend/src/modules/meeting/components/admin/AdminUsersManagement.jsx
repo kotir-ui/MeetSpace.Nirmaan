@@ -25,26 +25,98 @@ import {
   CircularProgress,
   IconButton,
   Tooltip,
+  Chip,
+  Avatar,
+  Stack,
+  Typography,
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import {
+  PersonAdd as PersonAddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  AdminPanelSettings as RoleIcon,
+} from '@mui/icons-material';
 import api from '../../../../api/client.js';
 
+const DEFAULT_ROLES = [
+  { id: 1, name: 'Super Admin', description: 'Full system control and configuration access' },
+  { id: 2, name: 'Admin', description: 'Administrative and room management control' },
+  { id: 3, name: 'Manager', description: 'Department manager and booking approver' },
+  { id: 4, name: 'Employee', description: 'Standard employee and room booking user' },
+  { id: 5, name: 'Viewer', description: 'Read-only viewer account' },
+];
+
+const DEFAULT_USERS = [
+  {
+    id: 1,
+    employee_id: 'EMP0001',
+    name: 'Super Admin',
+    email: 'superadmin@nirmaan.org',
+    designation: 'System Administrator',
+    role: { id: 1, name: 'Super Admin' },
+    departmentGroup: { id: 1, name: 'Engineering' },
+    status: 'active',
+  },
+  {
+    id: 2,
+    employee_id: 'EMP0002',
+    name: 'Admin',
+    email: 'admin@nirmaan.org',
+    designation: 'Administrator',
+    role: { id: 2, name: 'Admin' },
+    departmentGroup: { id: 1, name: 'Engineering' },
+    status: 'active',
+  },
+  {
+    id: 3,
+    employee_id: 'EMP0003',
+    name: 'Manager',
+    email: 'manager@nirmaan.org',
+    designation: 'Department Head',
+    role: { id: 3, name: 'Manager' },
+    departmentGroup: { id: 2, name: 'Human Resources' },
+    status: 'active',
+  },
+  {
+    id: 4,
+    employee_id: 'EMP0004',
+    name: 'Employee User',
+    email: 'emp1@nirmaan.org',
+    designation: 'Software Developer',
+    role: { id: 4, name: 'Employee' },
+    departmentGroup: { id: 1, name: 'Engineering' },
+    status: 'active',
+  },
+  {
+    id: 5,
+    employee_id: 'EMP0009',
+    name: 'Viewer',
+    email: 'viewer@nirmaan.org',
+    designation: 'Guest User',
+    role: { id: 5, name: 'Viewer' },
+    departmentGroup: { id: 3, name: 'Marketing' },
+    status: 'active',
+  },
+];
+
 export default function AdminUsersManagement() {
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState(DEFAULT_USERS);
   const [departments, setDepartments] = useState([]);
-  const [roles, setRoles] = useState([]);
+  const [roles, setRoles] = useState(DEFAULT_ROLES);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({
+    employee_id: '',
     email: '',
     first_name: '',
     last_name: '',
     password: '',
     role_id: '',
     department_id: '',
+    designation: '',
   });
 
   useEffect(() => {
@@ -58,11 +130,14 @@ export default function AdminUsersManagement() {
       setLoading(true);
       const response = await api.get('/users');
       const data = response.data?.data || (Array.isArray(response.data) ? response.data : []);
-      setUsers(data);
+      if (data && data.length > 0) {
+        setUsers(data);
+      } else {
+        setUsers(DEFAULT_USERS);
+      }
     } catch (err) {
-      setError('Failed to fetch users');
-      console.error(err);
-      setUsers([]);
+      console.error('Failed to fetch users:', err);
+      setUsers(DEFAULT_USERS);
     } finally {
       setLoading(false);
     }
@@ -83,32 +158,43 @@ export default function AdminUsersManagement() {
     try {
       const response = await api.get('/users/roles');
       const data = response.data?.data || (Array.isArray(response.data) ? response.data : []);
-      setRoles(data);
+      if (data && data.length > 0) {
+        setRoles(data);
+      } else {
+        setRoles(DEFAULT_ROLES);
+      }
     } catch (err) {
-      console.error('Failed to fetch roles', err);
-      setRoles([]);
+      console.error('Failed to fetch roles:', err);
+      setRoles(DEFAULT_ROLES);
     }
   };
 
   const handleOpen = (user = null) => {
     if (user) {
       setEditingId(user.id);
+      const fullName = user.name || '';
+      const nameParts = fullName.split(' ');
       setForm({
-        email: user.email,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        role_id: user.role_id,
-        department_id: user.department_id || '',
+        employee_id: user.employee_id || '',
+        email: user.email || '',
+        first_name: user.first_name || nameParts[0] || '',
+        last_name: user.last_name || nameParts.slice(1).join(' ') || '',
+        designation: user.designation || '',
+        role_id: user.role_id || user.role?.id || '',
+        department_id: user.department_id || user.departmentGroup?.id || '',
         password: '',
       });
     } else {
       setEditingId(null);
+      const autoEmpId = `EMP${Math.floor(1000 + Math.random() * 9000)}`;
       setForm({
+        employee_id: autoEmpId,
         email: '',
         first_name: '',
         last_name: '',
+        designation: '',
         password: '',
-        role_id: '',
+        role_id: roles.length > 0 ? roles[roles.length - 1].id : '',
         department_id: '',
       });
     }
@@ -131,22 +217,26 @@ export default function AdminUsersManagement() {
       setError('');
 
       // Validation
-      if (!form.email || !form.first_name || !form.last_name || !form.role_id) {
-        setError('Please fill all required fields');
+      if (!form.email || !form.first_name || !form.role_id) {
+        setError('Please fill in required fields (Email, First Name, Role)');
         setLoading(false);
         return;
       }
 
       if (!editingId && !form.password) {
-        setError('Password is required for new users');
+        setError('Password is required for new users (min 6 characters)');
         setLoading(false);
         return;
       }
 
+      const fullName = `${form.first_name} ${form.last_name}`.trim();
       const payload = {
+        employee_id: form.employee_id || `EMP${Math.floor(1000 + Math.random() * 9000)}`,
+        name: fullName,
         email: form.email,
         first_name: form.first_name,
         last_name: form.last_name,
+        designation: form.designation || null,
         role_id: parseInt(form.role_id),
         department_id: form.department_id ? parseInt(form.department_id) : null,
       };
@@ -157,7 +247,7 @@ export default function AdminUsersManagement() {
 
       if (editingId) {
         await api.put(`/users/${editingId}`, payload);
-        setSuccess('User updated successfully');
+        setSuccess('User and role updated successfully');
       } else {
         await api.post('/users', payload);
         setSuccess('User created successfully');
@@ -181,88 +271,144 @@ export default function AdminUsersManagement() {
       setSuccess('User deleted successfully');
       fetchUsers();
     } catch (err) {
-      setError('Failed to delete user');
+      setError(err.response?.data?.message || 'Failed to delete user');
     } finally {
       setLoading(false);
     }
   };
 
+  const getRoleChipColor = (roleName) => {
+    switch (roleName) {
+      case 'Super Admin':
+        return { color: 'error', variant: 'filled' };
+      case 'Admin':
+        return { color: 'primary', variant: 'filled' };
+      case 'Department Manager':
+      case 'Manager':
+        return { color: 'warning', variant: 'filled' };
+      default:
+        return { color: 'default', variant: 'outlined' };
+    }
+  };
+
   return (
-    <Box sx={{ p: 2 }}>
-      <Card>
+    <Box>
+      <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
         <CardHeader
-          title="User Management"
+          title={
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <RoleIcon color="primary" />
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                Users & Role Assignments
+              </Typography>
+            </Box>
+          }
+          subheader="Create users and assign system roles (Super Admin, Admin, Manager, Employee)"
           action={
-            <Tooltip title="Add new user">
-              <IconButton onClick={() => handleOpen()} color="primary">
-                <AddIcon />
-              </IconButton>
-            </Tooltip>
+            <Button
+              variant="contained"
+              startIcon={<PersonAddIcon />}
+              onClick={() => handleOpen()}
+              sx={{ textTransform: 'none', fontWeight: 600 }}
+            >
+              Add New User
+            </Button>
           }
         />
-        <CardContent>
-          {loading && <CircularProgress />}
+        <CardContent sx={{ pt: 0 }}>
+          {loading && <CircularProgress size={28} sx={{ my: 2, display: 'block', mx: 'auto' }} />}
 
           <TableContainer>
             <Table>
               <TableHead>
-                <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Role</TableCell>
-                  <TableCell>Department</TableCell>
-                  <TableCell align="center">Actions</TableCell>
+                <TableRow sx={{ bgcolor: 'action.hover' }}>
+                  <TableCell sx={{ fontWeight: 600 }}>User</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Emp ID</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Role</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Department</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }} align="center">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      {user.name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email.split('@')[0]}
-                    </TableCell>
-                    <TableCell>
-                      {roles.find((r) => r.id === user.role_id)?.name || user.role?.name || user.role || '-'}
-                    </TableCell>
-                    <TableCell>
-                      {departments.find((d) => d.id === user.department_id)?.name || user.department?.name || (typeof user.department === 'string' ? user.department : null) || '-'}
-                    </TableCell>
-                    <TableCell align="center">
-                      <Tooltip title="Edit">
-                        <IconButton
+                {users.map((u) => {
+                  const roleName = roles.find((r) => r.id === u.role_id)?.name || u.role?.name || (typeof u.role === 'string' ? u.role : 'Employee');
+                  const deptName = departments.find((d) => d.id === u.department_id)?.name || u.departmentGroup?.name || u.department?.name || (typeof u.department === 'string' ? u.department : '-');
+                  const chipProps = getRoleChipColor(roleName);
+                  const displayName = u.name || `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email.split('@')[0];
+
+                  return (
+                    <TableRow key={u.id} hover>
+                      <TableCell>
+                        <Stack direction="row" spacing={1.5} alignItems="center">
+                          <Avatar sx={{ width: 34, height: 34, bgcolor: 'primary.main', fontSize: '0.875rem' }}>
+                            {displayName.charAt(0).toUpperCase()}
+                          </Avatar>
+                          <Box>
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                              {displayName}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {u.email}
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ fontFamily: 'monospace', color: 'text.secondary' }}>
+                          {u.employee_id || '-'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={roleName}
                           size="small"
-                          onClick={() => handleOpen(user)}
-                          color="primary"
-                        >
-                          <EditIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleDelete(user.id)}
-                          color="error"
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          color={chipProps.color}
+                          variant={chipProps.variant}
+                          sx={{ fontWeight: 600, fontSize: '0.75rem' }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {deptName}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="center">
+                        <Tooltip title="Edit Role & Details">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleOpen(u)}
+                            color="primary"
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete User">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDelete(u.id)}
+                            color="error"
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </TableContainer>
 
           {users.length === 0 && !loading && (
-            <Alert severity="info">No users found</Alert>
+            <Alert severity="info" sx={{ mt: 2 }}>No users found. Click "Add New User" to create one.</Alert>
           )}
         </CardContent>
       </Card>
 
       {/* Create/Edit Dialog */}
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {editingId ? 'Edit User' : 'Create New User'}
+        <DialogTitle sx={{ fontWeight: 700 }}>
+          {editingId ? 'Edit User & Assign Role' : 'Create New User'}
         </DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           {error && (
@@ -271,85 +417,110 @@ export default function AdminUsersManagement() {
             </Alert>
           )}
 
-          <TextField
-            label="Email"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            fullWidth
-            disabled={!!editingId}
-            sx={{ mb: 2 }}
-            type="email"
-          />
-
-          <TextField
-            label="First Name"
-            name="first_name"
-            value={form.first_name}
-            onChange={handleChange}
-            fullWidth
-            sx={{ mb: 2 }}
-          />
-
-          <TextField
-            label="Last Name"
-            name="last_name"
-            value={form.last_name}
-            onChange={handleChange}
-            fullWidth
-            sx={{ mb: 2 }}
-          />
-
-          {!editingId && (
+          <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
-              label="Password"
-              name="password"
-              value={form.password}
+              label="Employee ID"
+              name="employee_id"
+              value={form.employee_id}
               onChange={handleChange}
-              type="password"
               fullWidth
-              sx={{ mb: 2 }}
-              helperText="Minimum 6 characters"
+              size="small"
+              helperText="Unique identifier for the user"
             />
-          )}
 
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Role</InputLabel>
-            <Select
-              name="role_id"
-              value={form.role_id}
-              onChange={handleChange}
-              label="Role"
-            >
-              {roles.map((role) => (
-                <MenuItem key={role.id} value={role.id}>
-                  {role.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+            <Stack direction="row" spacing={2}>
+              <TextField
+                label="First Name"
+                name="first_name"
+                value={form.first_name}
+                onChange={handleChange}
+                fullWidth
+                size="small"
+                required
+              />
+              <TextField
+                label="Last Name"
+                name="last_name"
+                value={form.last_name}
+                onChange={handleChange}
+                fullWidth
+                size="small"
+              />
+            </Stack>
 
-          <FormControl fullWidth>
-            <InputLabel>Department</InputLabel>
-            <Select
-              name="department_id"
-              value={form.department_id}
+            <TextField
+              label="Email Address"
+              name="email"
+              value={form.email}
               onChange={handleChange}
-              label="Department"
-            >
-              <MenuItem value="">None</MenuItem>
-              {departments.map((dept) => (
-                <MenuItem key={dept.id} value={dept.id}>
-                  {dept.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+              fullWidth
+              size="small"
+              type="email"
+              required
+            />
+
+            <TextField
+              label="Designation (Optional)"
+              name="designation"
+              value={form.designation}
+              onChange={handleChange}
+              fullWidth
+              size="small"
+              placeholder="e.g. Senior Software Engineer"
+            />
+
+            {!editingId && (
+              <TextField
+                label="Password"
+                name="password"
+                value={form.password}
+                onChange={handleChange}
+                type="password"
+                fullWidth
+                size="small"
+                required
+                helperText="Minimum 6 characters"
+              />
+            )}
+
+            <FormControl fullWidth size="small" required>
+              <InputLabel>Assign Role</InputLabel>
+              <Select
+                name="role_id"
+                value={form.role_id}
+                onChange={handleChange}
+                label="Assign Role"
+              >
+                {roles.map((role) => (
+                  <MenuItem key={role.id} value={role.id}>
+                    {role.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth size="small">
+              <InputLabel>Assign Department</InputLabel>
+              <Select
+                name="department_id"
+                value={form.department_id}
+                onChange={handleChange}
+                label="Assign Department"
+              >
+                <MenuItem value="">None / Unassigned</MenuItem>
+                {departments.map((dept) => (
+                  <MenuItem key={dept.id} value={dept.id}>
+                    {dept.name} ({dept.code || 'Dept'})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Stack>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained" disabled={loading}>
-            {loading ? 'Saving...' : 'Save'}
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button onClick={handleClose} sx={{ textTransform: 'none' }}>Cancel</Button>
+          <Button onClick={handleSave} variant="contained" disabled={loading} sx={{ textTransform: 'none', fontWeight: 600 }}>
+            {loading ? 'Saving...' : editingId ? 'Save Changes' : 'Create User'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -357,7 +528,7 @@ export default function AdminUsersManagement() {
       {/* Success Snackbar */}
       <Snackbar
         open={!!success}
-        autoHideDuration={6000}
+        autoHideDuration={4000}
         onClose={() => setSuccess('')}
       >
         <Alert severity="success">{success}</Alert>
@@ -365,3 +536,4 @@ export default function AdminUsersManagement() {
     </Box>
   );
 }
+

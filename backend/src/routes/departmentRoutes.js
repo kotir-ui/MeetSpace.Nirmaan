@@ -16,13 +16,13 @@ const router = Router();
 // All routes require authentication
 router.use(requireAuth);
 
-// Department management endpoints with permission checks
-router.get('/', requirePermission('Departments', 'View'), getAllDepartments);
-router.get('/:id', requirePermission('Departments', 'View'), getDepartmentById);
+// Department management endpoints
+router.get('/', getAllDepartments);
+router.get('/:id', getDepartmentById);
 router.post('/', requirePermission('Departments', 'Create'), createDepartment);
 router.put('/:id', requirePermission('Departments', 'Edit'), updateDepartment);
 router.patch('/:id/status', requirePermission('Departments', 'Edit'), changeDepartmentStatus);
 router.delete('/:id', requirePermission('Departments', 'Delete'), deleteDepartment);
-router.get('/:id/members', requirePermission('Departments', 'View'), getDepartmentMembers);
+router.get('/:id/members', getDepartmentMembers);
 
 export default router;
