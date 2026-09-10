@@ -3,6 +3,7 @@ import app from './app.js';
 import db from './models/index.js';
 
 dotenv.config();
+process.env.TZ = 'Asia/Kolkata';
 
 const PORT = process.env.PORT || 5000;
 

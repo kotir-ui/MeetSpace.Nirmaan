@@ -4,6 +4,20 @@ import { sendBookingRequestMail } from '../../../services/emailService.js';
 
 const { MeetingBooking, MeetingRoom, User, Department, BookingParticipant, ApprovalRequest, Notification, BookingStatusHistory } = db;
 
+// Helper: Convert 12-hour time to 24-hour time
+const convertTo24Hour = (timeStr) => {
+  if (!timeStr) return null;
+  const match = String(timeStr).trim().match(/^(\d{1,2}):(\d{2})\s?(AM|PM)?$/i);
+  if (!match) return timeStr; // Already in 24-hour format or invalid
+  let [ , hours, minutes, modifier ] = match;
+  hours = parseInt(hours, 10);
+  if (modifier) {
+    if (modifier.toUpperCase() === 'PM' && hours < 12) hours += 12;
+    if (modifier.toUpperCase() === 'AM' && hours === 12) hours = 0;
+  }
+  return `${String(hours).padStart(2, '0')}:${minutes}:00`;
+};
+
 // Helper: Generate unique booking number
 const generateBookingNumber = async () => {
   const count = await MeetingBooking.count();
@@ -246,6 +260,9 @@ export const checkAvailability = async (req, res) => {
   try {
     const { roomId, date, startTime, endTime } = req.query;
 
+    const parsedStartTime = convertTo24Hour(startTime);
+    const parsedEndTime = convertTo24Hour(endTime);
+
     // Validate inputs
     if (!roomId || !date || !startTime || !endTime) {
       return res.status(400).json({ success: false, error: 'Missing required parameters' });
@@ -264,7 +281,7 @@ export const checkAvailability = async (req, res) => {
         meeting_date: date,
         status: { [Op.notIn]: ['rejected', 'cancelled'] },
         [Op.or]: [
-          { start_time: { [Op.lt]: endTime }, end_time: { [Op.gt]: startTime } },
+          { start_time: { [Op.lt]: parsedEndTime }, end_time: { [Op.gt]: parsedStartTime } },
         ],
       },
     });
@@ -310,8 +327,8 @@ export const createBooking = async (req, res) => {
     const title = reqTitle || reqPurpose || 'Meeting';
     const purpose = reqPurpose || title;
     const meetingDate = reqDate || meeting_date;
-    const startTime = reqStart || start_time;
-    const endTime = reqEnd || end_time;
+    const startTime = convertTo24Hour(reqStart || start_time);
+    const endTime = convertTo24Hour(reqEnd || end_time);
     const roomId = reqRoom || room_id;
     const departmentId = reqDept || department_id || req.user.department_id;
     const finalMeetingType = meetingType || meeting_type || 'internal_meeting';
@@ -530,6 +547,9 @@ export const updateBooking = async (req, res) => {
     const userId = req.user.id;
     const { title, purpose, startTime, endTime, roomId, participantsCount, additionalNotes, participants } = req.body;
 
+    const parsedStartTime = convertTo24Hour(startTime);
+    const parsedEndTime = convertTo24Hour(endTime);
+
     const booking = await MeetingBooking.findByPk(id);
     if (!booking) {
       return res.status(404).json({ success: false, error: 'Booking not found' });
@@ -548,8 +568,8 @@ export const updateBooking = async (req, res) => {
     // If room or time changed, check for conflicts
     if (roomId !== booking.meeting_room_id || startTime !== booking.start_time || endTime !== booking.end_time) {
       const newRoomId = roomId || booking.meeting_room_id;
-      const newStartTime = startTime || booking.start_time;
-      const newEndTime = endTime || booking.end_time;
+      const newStartTime = parsedStartTime || booking.start_time;
+      const newEndTime = parsedEndTime || booking.end_time;
 
       const conflicts = await MeetingBooking.findAll({
         where: {
@@ -570,8 +590,8 @@ export const updateBooking = async (req, res) => {
     await booking.update({
       title: title || booking.title,
       purpose: purpose || booking.purpose,
-      start_time: startTime || booking.start_time,
-      end_time: endTime || booking.end_time,
+      start_time: parsedStartTime || booking.start_time,
+      end_time: parsedEndTime || booking.end_time,
       meeting_room_id: roomId || booking.meeting_room_id,
       participants_count: participantsCount || booking.participants_count,
       additional_notes: additionalNotes !== undefined ? additionalNotes : booking.additional_notes,

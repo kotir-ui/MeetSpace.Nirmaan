@@ -78,7 +78,7 @@ export default function Sidebar({ width, mobileOpen, onClose, isDesktop }) {
               Administration
             </Typography>
             <NavItem to="/meeting-room/admin" label="Admin Control" icon={<AdminPanelSettingsIcon />} onClose={onClose} />
-            <NavItem to="/meeting-room/reports" label="Utilization Reports" icon={<AssessmentIcon />} onClose={onClose} />
+            <NavItem to="/meeting-room/reports" label="Reports" icon={<AssessmentIcon />} onClose={onClose} />
           </>
         )}
       </List>

@@ -368,15 +368,12 @@ export default function RoomUtilizationReports() {
   };
 
   return (
-    <Container maxWidth="xl" sx={{ py: 3, px: { xs: 1.5, sm: 3 } }}>
+    <Container maxWidth="xl" sx={{ pt: 0, pb: 1.5, px: { xs: 1.5, sm: 3 } }}>
       {/* Top Header */}
-      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { md: 'center' }, gap: 2, mb: 3 }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { md: 'center' }, gap: 2, mb: 2 }}>
         <Box>
           <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
-            <AssessmentIcon color="primary" sx={{ fontSize: 28 }} /> Room Utilization & Comparative Reports
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Analyze meeting room occupancy rates, booking hours, peak usage times, and department breakdowns.
+            <AssessmentIcon color="primary" sx={{ fontSize: 28 }} /> Reports
           </Typography>
         </Box>
 
@@ -401,7 +398,7 @@ export default function RoomUtilizationReports() {
       </Box>
 
       {/* Filter Bar */}
-      <Paper elevation={0} sx={{ p: 2, mb: 3, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+      <Paper elevation={0} sx={{ p: 1.5, mb: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} md={4}>
             <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', display: 'block', mb: 0.5 }}>
@@ -486,12 +483,12 @@ export default function RoomUtilizationReports() {
       </Paper>
 
       {/* Top Metric Cards */}
-      <Grid container spacing={2.5} sx={{ mb: 3 }}>
+      <Grid container spacing={2} sx={{ mb: 2 }}>
         <Grid item xs={12} sm={6} md={3}>
-          <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2 }}>
-            <Stack direction="row" spacing={2} alignItems="center">
-              <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: '#E0F2FE', color: '#0284C7', display: 'flex' }}>
-                <TrendingUpIcon sx={{ fontSize: 28 }} />
+          <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 1.5 }}>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Box sx={{ p: 1, borderRadius: 2, bgcolor: '#E0F2FE', color: '#0284C7', display: 'flex' }}>
+                <TrendingUpIcon sx={{ fontSize: 24 }} />
               </Box>
               <Box>
                 <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary' }}>
@@ -506,10 +503,10 @@ export default function RoomUtilizationReports() {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2 }}>
-            <Stack direction="row" spacing={2} alignItems="center">
-              <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: '#DCFCE7', color: '#16A34A', display: 'flex' }}>
-                <AccessTimeIcon sx={{ fontSize: 28 }} />
+          <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 1.5 }}>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Box sx={{ p: 1, borderRadius: 2, bgcolor: '#DCFCE7', color: '#16A34A', display: 'flex' }}>
+                <AccessTimeIcon sx={{ fontSize: 24 }} />
               </Box>
               <Box>
                 <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary' }}>
@@ -524,10 +521,10 @@ export default function RoomUtilizationReports() {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2 }}>
-            <Stack direction="row" spacing={2} alignItems="center">
-              <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: '#FEF3C7', color: '#D97706', display: 'flex' }}>
-                <MeetingRoomIcon sx={{ fontSize: 28 }} />
+          <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 1.5 }}>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Box sx={{ p: 1, borderRadius: 2, bgcolor: '#FEF3C7', color: '#D97706', display: 'flex' }}>
+                <MeetingRoomIcon sx={{ fontSize: 24 }} />
               </Box>
               <Box sx={{ minWidth: 0 }}>
                 <Typography variant="h6" sx={{ fontWeight: 800, color: 'text.primary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -542,10 +539,10 @@ export default function RoomUtilizationReports() {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2 }}>
-            <Stack direction="row" spacing={2} alignItems="center">
-              <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: '#F3E8FF', color: '#9333EA', display: 'flex' }}>
-                <PeopleIcon sx={{ fontSize: 28 }} />
+          <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 1.5 }}>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Box sx={{ p: 1, borderRadius: 2, bgcolor: '#F3E8FF', color: '#9333EA', display: 'flex' }}>
+                <PeopleIcon sx={{ fontSize: 24 }} />
               </Box>
               <Box>
                 <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary' }}>
@@ -561,7 +558,7 @@ export default function RoomUtilizationReports() {
       </Grid>
 
       {/* Main Charts Section */}
-      <Grid container spacing={2.5} sx={{ mb: 3 }}>
+      <Grid container spacing={2} sx={{ mb: 2 }}>
         {/* Chart 1: Room Utilization Comparison */}
         <Grid item xs={12} lg={8}>
           <Paper elevation={0} sx={{ p: 2.5, border: '1px solid', borderColor: 'divider', borderRadius: 2, height: '100%' }}>

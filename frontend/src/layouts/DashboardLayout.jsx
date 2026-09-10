@@ -27,7 +27,7 @@ export default function DashboardLayout() {
         }}
       >
         <Header onMenuClick={() => setMobileOpen(true)} />
-        <Box sx={{ p: { xs: 2, md: 3 } }}>
+        <Box sx={{ px: { xs: 2, md: 3 }, py: { xs: 1, md: 1.5 } }}>
           <Outlet />
         </Box>
       </Box>

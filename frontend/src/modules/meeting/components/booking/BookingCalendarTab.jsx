@@ -914,7 +914,7 @@ export default function BookingCalendarTab() {
                     },
                   }}
                 >
-                  {isCapacityExceeded ? `Find Larger Rooms for ${numberOfPeople} People` : 'Search Available Rooms'}
+                  {isCapacityExceeded ? `Find Larger Rooms for ${numberOfPeople} People` : 'Book Room'}
                 </Button>
               </Box>
               );
