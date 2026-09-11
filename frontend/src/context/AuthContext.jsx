@@ -38,6 +38,14 @@ export const AuthProvider = ({ children }) => {
     return res.data.user;
   };
 
+  const googleLogin = async (token) => {
+    const res = await api.post('/auth/google-login', { token });
+    localStorage.setItem('token', res.data.token);
+    localStorage.setItem('user', JSON.stringify(res.data.user));
+    setUser(res.data.user);
+    return res.data.user;
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -56,6 +64,7 @@ export const AuthProvider = ({ children }) => {
       user,
       loading,
       login,
+      googleLogin,
       logout,
       updateProfile,
       isSuperAdmin: user?.role === 'Super Admin',

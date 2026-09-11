@@ -17,17 +17,19 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { DARK_BLUE } from '../theme.js';
 import api from '../api/client.js';
 import ForgotPasswordDialog from '../components/ForgotPasswordDialog.jsx';
+import { GoogleLogin } from '@react-oauth/google';
 
 export default function Login() {
   const navigate = useNavigate();
   const destination = '/meeting-room';
 
-  const { login, user } = useAuth();
+  const { login, googleLogin, user } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [show, setShow] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEnabled, setForgotEnabled] = useState(false);
 
@@ -88,14 +90,15 @@ export default function Login() {
             <Box sx={{ mt: 1.5 }}>
               <Typography
                 className="brand-bounce-text"
-                variant="h5"
+                variant="h6"
                 sx={{
-                  fontWeight: 800,
+                  fontWeight: 700,
                   color: DARK_BLUE,
-                  letterSpacing: -0.5,
+                  letterSpacing: -0.2,
+                  fontSize: '1.15rem'
                 }}
               >
-                MeetSpace<Typography component="span" sx={{ color: 'inherit', fontWeight: 800, fontSize: 'inherit' }}>.Nirmaan</Typography>
+                MeetSpace
               </Typography>
             </Box>
           </Box>
@@ -139,12 +142,46 @@ export default function Login() {
               fullWidth
               variant="contained"
               size="large"
-              disabled={loading}
+              disabled={loading || googleLoading}
               sx={{ mt: 3 }}
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>
-            <Box sx={{ textAlign: 'center', mt: 2.5 }}>
+
+            <Box sx={{ my: 3, display: 'flex', alignItems: 'center' }}>
+              <Box sx={{ flex: 1, height: '1px', bgcolor: 'divider' }} />
+              <Typography variant="body2" sx={{ px: 2, color: 'text.secondary', fontWeight: 500 }}>
+                OR
+              </Typography>
+              <Box sx={{ flex: 1, height: '1px', bgcolor: 'divider' }} />
+            </Box>
+
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+              <GoogleLogin
+                onSuccess={async (credentialResponse) => {
+                  try {
+                    setGoogleLoading(true);
+                    setError('');
+                    await googleLogin(credentialResponse.credential);
+                    navigate(destination, { replace: true });
+                  } catch (err) {
+                    setError(err.response?.data?.message || 'Google Login failed');
+                  } finally {
+                    setGoogleLoading(false);
+                  }
+                }}
+                onError={() => {
+                  setError('Google Login was unsuccessful');
+                }}
+                useOneTap
+                theme="outline"
+                size="large"
+                text="continue_with"
+                shape="rectangular"
+              />
+            </Box>
+
+            <Box sx={{ textAlign: 'center', mt: 3 }}>
               <Link
                 component="button"
                 type="button"

@@ -1,6 +1,6 @@
 import db from '../models/index.js';
 import { Op } from 'sequelize';
-import { sendBookingRequestMail } from '../../../services/emailService.js';
+import { sendBookingRequestMail, sendSubmissionEmails } from '../../../services/emailService.js';
 
 const { MeetingBooking, MeetingRoom, User, Department, BookingParticipant, ApprovalRequest, Notification, BookingStatusHistory } = db;
 
@@ -513,24 +513,15 @@ export const createBooking = async (req, res) => {
 
     // 6. Send Email alert to Manager and Admins
     try {
-      const adminEmails = adminUsers.map((a) => a.email).filter(Boolean);
-      await sendBookingRequestMail({
-        managerEmail: managerUser?.email,
-        managerName: managerUser?.name || 'Department Manager',
-        adminEmails,
-        requesterName,
-        requesterEmail: requester?.email,
-        requesterDept: deptName,
-        roomName,
-        bookingNumber,
-        title,
-        purpose,
-        meetingDate,
-        startTime,
-        endTime,
-      });
-    } catch (mailErr) {
-      console.warn('Failed to send booking request email:', mailErr.message);
+      sendSubmissionEmails({
+        employee: requester,
+        manager: managerUser,
+        roomManager: adminUsers,
+        booking,
+        room,
+      }).catch(mailErr => console.warn('Failed to send submission emails:', mailErr.message));
+    } catch (err) {
+      console.warn('Unexpected error starting email task:', err.message);
     }
 
     res.status(201).json({ success: true, data: booking, message: 'Booking created successfully' });

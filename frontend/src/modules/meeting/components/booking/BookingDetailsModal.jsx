@@ -18,6 +18,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import axios from 'axios';
+import BookingStatusChip from './BookingStatusChip.jsx';
 
 const BookingDetailsModal = ({ open, booking, onClose, onUpdate }) => {
   const [loading, setLoading] = useState(false);
@@ -93,10 +94,7 @@ const BookingDetailsModal = ({ open, booking, onClose, onUpdate }) => {
               STATUS
             </Typography>
             <Box sx={{ mt: 0.5 }}>
-              <Chip
-                label={getStatusLabel(booking.status)}
-                color={getStatusColor(booking.status)}
-              />
+              <BookingStatusChip booking={booking} size="medium" />
             </Box>
           </Box>
 

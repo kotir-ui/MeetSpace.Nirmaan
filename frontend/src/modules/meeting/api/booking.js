@@ -13,6 +13,8 @@ export const cancelBooking = (id, data) => api.delete(`/booking/bookings/${id}`,
 export const extendBooking = (id, data) => api.post(`/booking/bookings/${id}/extend`, data);
 
 // Rooms
+export const getPublicRoomCount = () => api.get('/booking/rooms/public-count');
+export const getPublicRooms = () => api.get('/booking/rooms/public');
 export const getRooms = (params) => api.get('/booking/rooms', { params });
 export const getAvailableAlternates = (params) => api.get('/booking/rooms/available-alternates', { params });
 export const getRoomDetails = (id) => api.get(`/booking/rooms/${id}`);

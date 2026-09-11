@@ -173,6 +173,21 @@ export default function BookingDashboard() {
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
     return todayBookings.find((booking) => {
+      const bDate = booking.meeting_date || booking.date || booking.meetingDate;
+      const bDateStr = bDate ? String(bDate).split('T')[0] : null;
+
+      let isForThisDate = bDateStr === dateString;
+
+      if (booking.occurrences && Array.isArray(booking.occurrences)) {
+        const occ = booking.occurrences.find((o) => {
+          const oDate = o.meeting_date || o.date || o.meetingDate;
+          return oDate && String(oDate).split('T')[0] === dateString;
+        });
+        if (occ) isForThisDate = true;
+      }
+
+      if (!isForThisDate) return false;
+
       const bookingRoomId = booking.meeting_room_id || booking.room_id || booking.room?.id;
       const matchesRoom = (bookingRoomId && String(bookingRoomId) === String(roomId)) ||
                           (booking.room?.name && roomName && booking.room.name.toLowerCase().trim() === roomName.toLowerCase().trim()) ||
@@ -183,11 +198,6 @@ export default function BookingDashboard() {
 
       const bStart = parseTimeToMinutes(booking.start_time);
       const bEnd = parseTimeToMinutes(booking.end_time);
-
-      // Auto-available: if today and meeting ended, freed up
-      if (isToday && currentMinutes >= bEnd) {
-        return false;
-      }
 
       return bStart < slot.endMin && bEnd > slot.startMin;
     });
@@ -472,7 +482,7 @@ export default function BookingDashboard() {
                             <Chip
                               label={`Booked: ${bookedSlotsCount}`}
                               size="small"
-                              sx={{ bgcolor: '#DBEAFE', color: '#1E40AF', fontWeight: 700, fontSize: '0.73rem', height: 24 }}
+                              sx={{ bgcolor: '#FFF1F2', color: '#BE123C', fontWeight: 700, fontSize: '0.73rem', height: 24 }}
                             />
                             <Chip
                               label={`Free: ${availableSlotsCount}`}
@@ -506,9 +516,10 @@ export default function BookingDashboard() {
                               display: 'grid',
                               gridTemplateColumns: 'repeat(auto-fill, minmax(85px, 1fr))',
                               gap: 0.75,
-                              maxHeight: 180,
+                              maxHeight: 240,
                               overflowY: 'auto',
-                              pr: 0.5,
+                              '&::-webkit-scrollbar': { display: 'none' },
+                              scrollbarWidth: 'none',
                             }}
                           >
                             {TIME_SLOTS.map((slot) => {
@@ -517,12 +528,19 @@ export default function BookingDashboard() {
                               const isPending = booking?.status === 'pending_department_head' || booking?.status === 'pending_hr' || booking?.status === 'pending_manager' || booking?.status === 'pending';
                               const isExtended = booking?.status === 'extended' || booking?.is_extended;
 
+                              const isToday = dateString === getTodayDateString();
+                              const now = new Date();
+                              const currentMinutes = now.getHours() * 60 + now.getMinutes();
+                              const isPastSlot = isToday && slot.startMin <= currentMinutes;
+
                               return (
                                 <Tooltip
                                   key={slot.start}
                                   title={
                                     unavailable
                                       ? 'Room is currently unavailable'
+                                      : isPastSlot
+                                      ? 'Time slot has passed'
                                       : isBooked
                                       ? `${isPending ? 'Pending Approval' : isExtended ? 'Extended (In Use)' : 'Booked'}: ${booking.title || 'Meeting'} (${booking.user?.name || booking.user?.email || booking.organizer?.name || 'User'})`
                                       : `Click to book ${slot.label} - ${slot.end}`
@@ -530,30 +548,30 @@ export default function BookingDashboard() {
                                 >
                                   <Box
                                     onClick={() => {
-                                      if (!unavailable && !isBooked) {
+                                      if (!unavailable && !isBooked && !isPastSlot) {
                                         handleRedirectToBooking(room, slot);
                                       }
                                     }}
                                     sx={{
-                                      py: 0.6,
-                                      px: 0.8,
+                                      py: 0.4,
+                                      px: 0.6,
                                       borderRadius: 1,
                                       textAlign: 'center',
-                                      fontSize: '0.75rem',
+                                      fontSize: '0.7rem',
                                       fontWeight: 700,
-                                      cursor: unavailable || isBooked ? 'not-allowed' : 'pointer',
+                                      cursor: unavailable || isBooked || isPastSlot ? 'not-allowed' : 'pointer',
                                       border: '1.5px solid',
                                       borderColor: isBooked
                                         ? isPending ? '#3B82F6' : '#2563EB'
-                                        : '#86EFAC',
+                                        : isPastSlot ? '#E5E7EB' : '#86EFAC',
                                       bgcolor: isBooked
                                         ? isPending ? '#EFF6FF' : '#DBEAFE'
-                                        : '#F0FDF4',
+                                        : isPastSlot ? '#F3F4F6' : '#F0FDF4',
                                       color: isBooked
                                         ? isPending ? '#1D4ED8' : '#1E40AF'
-                                        : '#166534',
+                                        : isPastSlot ? '#9CA3AF' : '#166534',
                                       transition: 'all 0.15s ease',
-                                      '&:hover': !unavailable && !isBooked ? {
+                                      '&:hover': !unavailable && !isBooked && !isPastSlot ? {
                                         bgcolor: '#DCFCE7',
                                         borderColor: '#22C55E',
                                         transform: 'scale(1.04)',
@@ -562,8 +580,8 @@ export default function BookingDashboard() {
                                     }}
                                   >
                                     <div>{slot.label}</div>
-                                    <div style={{ fontSize: '0.65rem', fontWeight: 800 }}>
-                                      {isBooked ? (isPending ? 'Pending' : isExtended ? 'Extended' : 'Booked') : 'Available'}
+                                    <div style={{ fontSize: '0.6rem', fontWeight: 800 }}>
+                                      {isBooked ? (isPending ? 'Pending' : isExtended ? 'Extended' : 'Booked') : isPastSlot ? 'Unavailable' : 'Available'}
                                     </div>
                                   </Box>
                                 </Tooltip>

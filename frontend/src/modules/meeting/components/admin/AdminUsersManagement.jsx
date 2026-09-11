@@ -284,10 +284,12 @@ export default function AdminUsersManagement() {
       case 'Admin':
         return { color: 'primary', variant: 'filled' };
       case 'Department Manager':
-      case 'Manager':
+      case 'Department Head':
         return { color: 'warning', variant: 'filled' };
+      case 'Employee':
+        return { color: 'success', variant: 'filled' };
       default:
-        return { color: 'default', variant: 'outlined' };
+        return { color: 'info', variant: 'filled' };
     }
   };
 

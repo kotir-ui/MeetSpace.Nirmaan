@@ -4,12 +4,15 @@ import db from '../models/index.js';
 import { logActivity } from '../utils/activity.js';
 import { getSettingsMap, isFeatureEnabled } from './settingsController.js';
 import { createNotification } from './notificationController.js';
+import { OAuth2Client } from 'google-auth-library';
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const { User, Role, PasswordResetOtp, LoginAttempt } = db;
 
 const signToken = (user) =>
   jwt.sign({ id: user.id, role: user.role?.name }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '1d',
+    expiresIn: process.env.JWT_EXPIRES_IN || '30d',
   });
 
 const getClientIp = (req) => {
@@ -87,8 +90,9 @@ export const login = async (req, res, next) => {
 
     let user = null;
     try {
+      const { Op } = db.Sequelize || {};
       user = await User.scope('withPassword').findOne({
-        where: { email },
+        where: db.sequelize ? db.sequelize.where(db.sequelize.fn('LOWER', db.sequelize.col('User.email')), email.toLowerCase()) : { email },
         include: [{ model: Role, as: 'role' }],
       });
     } catch (dbErr) {
@@ -134,7 +138,7 @@ export const login = async (req, res, next) => {
       const token = jwt.sign(
         { id: demoUser.id, email: demoUser.email, role: demoUser.role },
         process.env.JWT_SECRET || 'nirmaan_secret_jwt_key_2026',
-        { expiresIn: process.env.JWT_EXPIRES_IN || '1d' }
+        { expiresIn: process.env.JWT_EXPIRES_IN || '30d' }
       );
 
       return res.json({
@@ -154,6 +158,74 @@ export const login = async (req, res, next) => {
     }
 
     return res.status(401).json({ message: 'Invalid credentials' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const googleLogin = async (req, res, next) => {
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({ message: 'Google token is required' });
+    }
+
+    let ticket;
+    try {
+      ticket = await googleClient.verifyIdToken({
+        idToken: token,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+    } catch (error) {
+      console.warn('Google token verification failed:', error.message);
+      return res.status(401).json({ message: 'Invalid Google token' });
+    }
+
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) {
+      return res.status(401).json({ message: 'Could not extract email from Google token' });
+    }
+
+    const email = payload.email;
+
+    const user = await User.scope('withPassword').findOne({
+      where: db.sequelize ? db.sequelize.where(db.sequelize.fn('LOWER', db.sequelize.col('User.email')), email.toLowerCase()) : { email },
+      include: [{ model: Role, as: 'role' }],
+    });
+
+    if (!user) {
+      return res.status(401).json({ 
+        message: 'Your Google account is not registered or authorized for this portal. Please contact the administrator.' 
+      });
+    }
+
+    if (user.status !== 'active') {
+      return res.status(403).json({ 
+        message: 'Your account is currently inactive. Please contact the administrator.' 
+      });
+    }
+
+    try {
+      user.last_login = new Date();
+      await user.save();
+    } catch (_) {}
+
+    const jwtToken = signToken(user);
+    return res.json({
+      token: jwtToken,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role?.name,
+        department: user.department,
+        department_id: user.department_id,
+        status: user.status,
+        mobile: user.mobile,
+        designation: user.designation,
+      },
+    });
+
   } catch (err) {
     next(err);
   }

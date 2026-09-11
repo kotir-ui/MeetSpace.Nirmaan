@@ -33,6 +33,12 @@ router.delete('/bookings/:id', authenticate, bookingController.cancelBooking);
 router.post('/bookings/:id/extend', authenticate, bookingController.extendBooking);
 
 // ===== ROOMS =====
+// Public room count
+router.get('/rooms/public-count', roomController.getPublicRoomCount);
+
+// Public rooms list
+router.get('/rooms/public', roomController.getPublicRooms);
+
 // Available alternate rooms (MUST come before :id routes)
 router.get('/rooms/available-alternates', authenticate, roomController.getAvailableAlternates);
 

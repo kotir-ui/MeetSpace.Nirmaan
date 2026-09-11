@@ -261,6 +261,26 @@ export default function BookingCalendarTab() {
     }
   };
 
+  const isPastTime = (selDate, timeStr) => {
+    if (!timeStr) return false;
+    const today = new Date();
+    if (
+      selDate.getDate() === today.getDate() &&
+      selDate.getMonth() === today.getMonth() &&
+      selDate.getFullYear() === today.getFullYear()
+    ) {
+      const [time, ampm] = timeStr.split(' ');
+      let [hours, minutes] = time.split(':').map(Number);
+      if (ampm.toUpperCase() === 'PM' && hours < 12) hours += 12;
+      if (ampm.toUpperCase() === 'AM' && hours === 12) hours = 0;
+      
+      const checkTime = new Date(today);
+      checkTime.setHours(hours, minutes, 0, 0);
+      return checkTime <= today;
+    }
+    return false;
+  };
+
   const fetchAvailableRooms = async () => {
     if (selectedDate.getDay() === 0) {
       setSnackbar({ open: true, message: 'Meeting rooms are closed on Sundays.', severity: 'info' });
@@ -268,6 +288,10 @@ export default function BookingCalendarTab() {
     }
     if (!startTime || !endTime || !numberOfPeople) {
       setSnackbar({ open: true, message: 'Please fill in all required fields', severity: 'error' });
+      return;
+    }
+    if (isPastTime(selectedDate, startTime)) {
+      setSnackbar({ open: true, message: 'Cannot book a slot that has already passed today.', severity: 'error' });
       return;
     }
 
@@ -345,12 +369,10 @@ export default function BookingCalendarTab() {
   }
 
   for (let i = 1; i <= daysInMonth; i++) {
-    if (new Date(currentDate.getFullYear(), currentDate.getMonth(), i).getDay() !== 0) {
-      days.push(i);
-    }
+    days.push(i);
   }
 
-  const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const monthYear = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
   const isToday = (day) => {
@@ -377,6 +399,10 @@ export default function BookingCalendarTab() {
   };
 
   const handleSubmitBooking = async () => {
+    if (isPastTime(selectedDate, startTime)) {
+      setSnackbar({ open: true, message: 'Cannot book a slot that has already passed today.', severity: 'error' });
+      return;
+    }
     try {
       setLoading(true);
       if (selectedRoomData && parseInt(numberOfPeople, 10) > selectedRoomData.capacity) {
@@ -456,23 +482,35 @@ export default function BookingCalendarTab() {
   const calendarDays = days.map((day, index) => {
     if (day === null) {
       return (
-        <Grid item xs={12 / 6} key={`empty-${index}`}>
+        <Grid item xs={1} key={`empty-${index}`}>
           <Box sx={{ p: 0.5 }} />
         </Grid>
       );
     }
 
     const dayBookings = getBookingsForDay(day);
+    const dayDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    const isSunday = dayDate.getDay() === 0;
     const isSelected = selectedDate.getDate() === day &&
       selectedDate.getMonth() === currentDate.getMonth() &&
       selectedDate.getFullYear() === currentDate.getFullYear();
 
+    const hasBooked = dayBookings.some((b) => ['confirmed', 'approved', 'completed'].includes(b.status));
+    const hasPending = dayBookings.some((b) => b.status?.startsWith('pending'));
+    const hasAvailable = !isPastDate(day) && !isSunday;
+
     return (
-      <Grid item xs={12 / 6} key={day}>
+      <Grid item xs={1} key={day}>
         <Box
-          onClick={() => !isPastDate(day) && handleDayClick(day)}
+          onClick={() => {
+            if (isSunday) {
+              setSnackbar({ open: true, message: 'Meeting rooms are closed on Sundays.', severity: 'info' });
+              return;
+            }
+            if (!isPastDate(day)) handleDayClick(day);
+          }}
           sx={{
-            cursor: isPastDate(day) ? 'not-allowed' : 'pointer',
+            cursor: isPastDate(day) || isSunday ? 'not-allowed' : 'pointer',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
@@ -480,17 +518,19 @@ export default function BookingCalendarTab() {
             aspectRatio: '1',
             border: isSelected ? '3px solid #2196f3' : '2px solid #e0e0e0',
             borderRadius: '8px',
-            backgroundColor: isPastDate(day)
+            backgroundColor: isSunday
+              ? '#fafafa'
+              : isPastDate(day)
               ? '#f5f5f5'
               : isToday(day)
               ? '#e8f5e9'
               : 'white',
-            opacity: isPastDate(day) ? 0.5 : 1,
+            opacity: isPastDate(day) ? 0.5 : isSunday ? 0.7 : 1,
             transition: 'all 0.2s ease',
             '&:hover': {
-              boxShadow: !isPastDate(day) ? '0 4px 12px rgba(0,0,0,0.15)' : 'none',
-              transform: !isPastDate(day) ? 'scale(1.05)' : 'none',
-              borderColor: !isPastDate(day) ? '#2196f3' : '#e0e0e0',
+              boxShadow: !isPastDate(day) && !isSunday ? '0 4px 12px rgba(0,0,0,0.15)' : 'none',
+              transform: !isPastDate(day) && !isSunday ? 'scale(1.05)' : 'none',
+              borderColor: !isPastDate(day) && !isSunday ? '#2196f3' : '#e0e0e0',
             },
             p: 0.5,
             position: 'relative',
@@ -501,25 +541,12 @@ export default function BookingCalendarTab() {
             sx={{
               fontWeight: 700,
               fontSize: '0.95rem',
-              color: isToday(day) ? '#2e7d32' : 'text.primary',
+              color: isSunday ? '#9e9e9e' : isToday(day) ? '#2e7d32' : 'text.primary',
               textAlign: 'center',
             }}
           >
             {day}
           </Typography>
-          {dayBookings.length > 0 && (
-            <Box
-              sx={{
-                position: 'absolute',
-                bottom: '2px',
-                right: '2px',
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                backgroundColor: '#ff9800',
-              }}
-            />
-          )}
         </Box>
       </Grid>
     );
@@ -546,35 +573,19 @@ export default function BookingCalendarTab() {
               </Box>
             </Box>
 
-            {/* Legend */}
-            <Box sx={{ mb: 1, display: 'flex', gap: 0.5, flexWrap: 'wrap', fontSize: '0.65rem' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#4caf50' }} />
-                <span>Available</span>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#f44336' }} />
-                <span>Booked</span>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#ff9800' }} />
-                <span>Pending</span>
-              </Box>
-            </Box>
-
-            {/* Week Days */}
-            <Grid container spacing={0.3} sx={{ mb: 0.5 }}>
+            {/* Week Days Header (7 columns) */}
+            <Grid container columns={7} spacing={0.3} sx={{ mb: 0.5 }}>
               {weekDays.map((day) => (
-                <Grid item xs={12 / 6} key={day}>
-                  <Box sx={{ textAlign: 'center', fontWeight: 700, fontSize: '0.7rem', py: 0.3, color: 'text.secondary' }}>
+                <Grid item xs={1} key={day}>
+                  <Box sx={{ textAlign: 'center', fontWeight: 700, fontSize: '0.75rem', py: 0.3, color: day === 'Sun' ? 'text.secondary' : 'text.primary' }}>
                     {day}
                   </Box>
                 </Grid>
               ))}
             </Grid>
 
-            {/* Calendar Days */}
-            <Grid container spacing={0.3}>
+            {/* Calendar Days (7 columns) */}
+            <Grid container columns={7} spacing={0.3}>
               {calendarDays}
             </Grid>
 

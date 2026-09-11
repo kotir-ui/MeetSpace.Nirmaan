@@ -3,6 +3,28 @@ import { Op } from 'sequelize';
 
 const { MeetingRoom, RoomFacility, MeetingBooking } = db;
 
+export const getPublicRoomCount = async (req, res) => {
+  try {
+    const count = await MeetingRoom.count();
+    return res.json({ count });
+  } catch (error) {
+    return res.status(500).json({ count: 0 });
+  }
+};
+
+export const getPublicRooms = async (req, res) => {
+  try {
+    const rooms = await MeetingRoom.findAll({
+      include: [{ model: RoomFacility, as: 'facilities', attributes: ['facility_type'] }],
+      attributes: ['id', 'name', 'room_number', 'capacity', 'floor'],
+      order: [['floor', 'ASC'], ['room_number', 'ASC']],
+    });
+    return res.json({ data: rooms });
+  } catch (error) {
+    return res.status(500).json({ data: [], message: error.message });
+  }
+};
+
 // Get all meeting rooms
 export const getAllRooms = async (req, res) => {
   try {

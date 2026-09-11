@@ -1,6 +1,6 @@
 import db from '../models/index.js';
 import { Op } from 'sequelize';
-import { sendBookingApprovedMail, sendBookingRejectedMail } from '../../../services/emailService.js';
+import { sendBookingApprovedMail, sendBookingRejectedMail, sendStatusEmail } from '../../../services/emailService.js';
 
 const { MeetingBooking, MeetingRoom, ApprovalRequest, ApprovalHistory, User, Department, Notification, BookingStatusHistory } = db;
 
@@ -449,20 +449,17 @@ export const approveBooking = async (req, res) => {
           );
         }
 
-        // Email back to User and Manager
-        await sendBookingApprovedMail({
-          userEmail: organizer?.email,
-          userName: organizer?.name || 'User',
-          managerEmail: managerUser?.email,
-          managerName: managerUser?.name || 'Manager',
-          approverName: req.user.name || 'Administrator',
-          roomName: displayRoomName,
-          bookingNumber: booking.booking_number,
-          title: booking.title,
-          meetingDate: booking.meeting_date,
-          startTime: booking.start_time,
-          endTime: booking.end_time,
-        });
+        // Email back to User
+        try {
+          sendStatusEmail({
+            employee: organizer,
+            booking,
+            room: { name: displayRoomName },
+            status: 'APPROVED',
+          }).catch(err => console.warn('Failed to send status email:', err.message));
+        } catch (mailErr) {
+          console.warn('Unexpected error starting email task:', mailErr.message);
+        }
       } catch (mailErr) {
         console.warn('Failed to send booking approved email:', mailErr.message);
       }
@@ -558,19 +555,17 @@ export const rejectBooking = async (req, res) => {
 
       const room = await MeetingRoom.findByPk(booking.meeting_room_id);
 
-      await sendBookingRejectedMail({
-        userEmail: organizer?.email,
-        userName: organizer?.name || 'User',
-        managerEmail: managerUser?.email,
-        rejecterName: req.user.name || 'Administrator',
-        roomName: room?.name || 'Meeting Room',
-        bookingNumber: booking.booking_number,
-        title: booking.title,
-        meetingDate: booking.meeting_date,
-        startTime: booking.start_time,
-        endTime: booking.end_time,
-        reason: comments || 'Administrative decision',
-      });
+      try {
+        sendStatusEmail({
+          employee: organizer,
+          booking,
+          room,
+          status: 'REJECTED',
+          reason: comments || 'Administrative decision',
+        }).catch(err => console.warn('Failed to send status email:', err.message));
+      } catch (mailErr) {
+        console.warn('Unexpected error starting email task:', mailErr.message);
+      }
     } catch (mailErr) {
       console.warn('Failed to send rejection email:', mailErr.message);
     }

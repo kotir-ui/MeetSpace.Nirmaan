@@ -121,8 +121,9 @@ export const createUser = async (req, res) => {
     }
 
     // Check if employee_id or email already exists
+    const { Op } = await import('sequelize');
     const existingUser = await User.findOne({
-      where: { [require('sequelize').Op.or]: [{ employee_id }, { email }] },
+      where: { [Op.or]: [{ employee_id }, { email }] },
     });
 
     if (existingUser) {
@@ -176,11 +177,9 @@ export const createUser = async (req, res) => {
     await ActivityLog.create({
       user_id: req.user?.id,
       action: 'USER_CREATE',
-      entity_type: 'User',
-      entity_id: newUser.id,
-      description: `Created new user: ${newUser.name} (${newUser.email})`,
+      entity: 'User',
+      details: `Created new user: ${newUser.name} (${newUser.email}) (ID: ${newUser.id})`,
       ip_address: req.ip,
-      user_agent: req.get('User-Agent'),
     });
 
     // Return user without password
@@ -283,11 +282,9 @@ export const updateUser = async (req, res) => {
     await ActivityLog.create({
       user_id: req.user?.id,
       action: 'USER_UPDATE',
-      entity_type: 'User',
-      entity_id: user.id,
-      description: `Updated user: ${user.name} (${user.email})`,
+      entity: 'User',
+      details: `Updated user: ${user.name} (${user.email}) (ID: ${user.id})`,
       ip_address: req.ip,
-      user_agent: req.get('User-Agent'),
     });
 
     const updatedUser = await User.findByPk(id, {
@@ -341,11 +338,9 @@ export const changeUserStatus = async (req, res) => {
     await ActivityLog.create({
       user_id: req.user?.id,
       action: 'USER_STATUS_CHANGE',
-      entity_type: 'User',
-      entity_id: user.id,
-      description: `Changed user status from '${oldStatus}' to '${status}'${reason ? ': ' + reason : ''}`,
+      entity: 'User',
+      details: `Changed user status from '${oldStatus}' to '${status}'${reason ? ': ' + reason : ''} (ID: ${user.id})`,
       ip_address: req.ip,
-      user_agent: req.get('User-Agent'),
     });
 
     res.status(200).json({
@@ -408,11 +403,9 @@ export const deleteUser = async (req, res) => {
     await ActivityLog.create({
       user_id: req.user?.id,
       action: 'USER_DELETE',
-      entity_type: 'User',
-      entity_id: user.id,
-      description: `Deleted user: ${user.name} (${user.email})`,
+      entity: 'User',
+      details: `Deleted user: ${user.name} (${user.email}) (ID: ${user.id})`,
       ip_address: req.ip,
-      user_agent: req.get('User-Agent'),
     });
 
     await user.destroy();

@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -12,6 +13,7 @@ import {
   AppBar,
   Toolbar,
   Link as MuiLink,
+  IconButton,
 } from '@mui/material';
 import {
   MeetingRoomRounded as MeetingRoomRoundedIcon,
@@ -24,8 +26,13 @@ import {
   LocationOn as LocationOnIcon,
   Language as LanguageIcon,
   CheckCircle as CheckCircleIcon,
+  Facebook as FacebookIcon,
+  LinkedIn as LinkedInIcon,
+  Instagram as InstagramIcon,
+  X as XIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext.jsx';
+import { getPublicRoomCount, getPublicRooms } from '../modules/meeting/api/booking.js';
 import { DARK_BLUE } from '../theme.js';
 
 const NAV_LINKS = [
@@ -40,22 +47,22 @@ const FEATURES = [
     icon: <MeetingRoomRoundedIcon sx={{ fontSize: 28, color: '#2563EB' }} />,
     bg: 'rgba(37, 99, 235, 0.1)',
     border: 'rgba(37, 99, 235, 0.2)',
-    title: 'Meeting Room Booking',
-    desc: 'Reserve conference rooms, inspect capacity, facilities (Projector, VC, Whiteboard), and book time slots with live conflict checking.',
+    title: 'Purpose-Built for NGO Needs',
+    desc: 'Perfectly suited for scheduling NGO meetings with donors, internal department gatherings, and other essential events.',
   },
   {
     icon: <CalendarMonthRoundedIcon sx={{ fontSize: 28, color: '#0284C7' }} />,
     bg: 'rgba(2, 132, 199, 0.1)',
     border: 'rgba(2, 132, 199, 0.2)',
     title: 'Interactive Schedule Calendar',
-    desc: 'View real-time room availability across the entire organization with day and week calendar schedules.',
+    desc: 'Feel free to easily book meeting rooms using flexible calendar dates. View real-time availability across the organization.',
   },
   {
     icon: <FactCheckRoundedIcon sx={{ fontSize: 28, color: '#059669' }} />,
     bg: 'rgba(5, 150, 105, 0.1)',
     border: 'rgba(5, 150, 105, 0.2)',
-    title: 'Multi-Stage Approvals',
-    desc: 'Automated workflow with Department Head and HR approvals to manage and approve room allocations effortlessly.',
+    title: '2-Stage Approval System',
+    desc: 'Secure 2-stage approval workflow. Users and department admins receive instant automated alert messages for status updates.',
   },
   {
     icon: <ManageAccountsRoundedIcon sx={{ fontSize: 28, color: '#7C3AED' }} />,
@@ -76,6 +83,26 @@ const ROOMS_PREVIEW = [
 export default function Landing() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [roomCount, setRoomCount] = useState(0);
+  const [rooms, setRooms] = useState([]);
+
+  useEffect(() => {
+    getPublicRoomCount()
+      .then(res => {
+        if (res.data && res.data.count) {
+          setRoomCount(res.data.count);
+        }
+      })
+      .catch(err => console.error('Failed to fetch public room count:', err));
+
+    getPublicRooms()
+      .then(res => {
+        if (res.data && res.data.data) {
+          setRooms(res.data.data);
+        }
+      })
+      .catch(err => console.error('Failed to fetch public rooms:', err));
+  }, []);
 
   const handleLaunch = () => navigate(user ? '/meeting-room' : '/login');
 
@@ -175,10 +202,10 @@ export default function Landing() {
             variant="contained"
             color="primary"
             onClick={handleLaunch}
-            startIcon={<LoginIcon />}
+            startIcon={user ? <ArrowForwardIcon /> : <LoginIcon />}
             sx={{ fontWeight: 700, px: 3, borderRadius: 2 }}
           >
-            Sign In
+            {user ? 'Dashboard' : 'Sign In'}
           </Button>
         </Toolbar>
       </AppBar>
@@ -202,7 +229,7 @@ export default function Landing() {
           <Grid container spacing={{ xs: 4, md: 5 }} alignItems="center">
             <Grid item xs={12} md={6.5}>
               <Chip
-                label="Enterprise Meeting Management"
+                label="Nirmaan Workspace Management"
                 sx={{
                   bgcolor: 'rgba(255,255,255,0.15)',
                   color: '#fff',
@@ -220,7 +247,7 @@ export default function Landing() {
                   letterSpacing: -0.5,
                 }}
               >
-                Smart Meeting Room Booking for Nirmaan
+                Streamlining Collaboration for Social Impact
               </Typography>
               <Typography
                 variant="h6"
@@ -232,7 +259,7 @@ export default function Landing() {
                   fontSize: { xs: '0.95rem', md: '1.05rem' },
                 }}
               >
-                Seamlessly schedule conference rooms, coordinate multi-stage manager & HR approvals, prevent meeting conflicts, and manage organizational facilities in one central platform.
+                Seamlessly schedule workspaces for donor meetings, skill development workshops, and internal team gatherings. Manage approvals and eliminate conflicts, empowering your team to focus on creating an equal and knowledge-driven society.
               </Typography>
 
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mt: 3.5 }}>
@@ -275,7 +302,7 @@ export default function Landing() {
                     Meeting Rooms Preview
                   </Typography>
                   <Chip
-                    label="4 Rooms Configured"
+                    label={`${roomCount} Rooms Configured`}
                     size="small"
                     sx={{
                       bgcolor: 'rgba(255,255,255,0.15)',
@@ -287,9 +314,9 @@ export default function Landing() {
                   />
                 </Box>
                 <Stack spacing={1.2}>
-                  {ROOMS_PREVIEW.map((room) => (
+                  {rooms.map((room) => (
                     <Box
-                      key={room.code}
+                      key={room.id}
                       sx={{
                         py: 1,
                         px: 1.5,
@@ -319,7 +346,7 @@ export default function Landing() {
                           {room.name}
                         </Typography>
                         <Chip
-                          label={room.code}
+                          label={room.room_number}
                           size="small"
                           sx={{
                             bgcolor: 'rgba(255,255,255,0.22)',
@@ -332,8 +359,13 @@ export default function Landing() {
                         />
                       </Box>
                       <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.73rem', display: 'block', mt: 0.25 }}>
-                        Capacity: {room.cap} people • {room.floor}
+                        Capacity: {room.capacity} people • Floor {room.floor}
                       </Typography>
+                      {room.facilities && room.facilities.length > 0 && (
+                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.68rem', display: 'block', mt: 0.25 }}>
+                          {room.facilities.map(f => f.facility_type).join(', ')}
+                        </Typography>
+                      )}
                     </Box>
                   ))}
                 </Stack>
@@ -433,14 +465,14 @@ export default function Landing() {
                 Empowering Social Innovation & Productive Workspaces
               </Typography>
               <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.65, mb: 3, fontSize: { xs: '0.9rem', md: '0.98rem' } }}>
-                Nirmaan is dedicated to driving impactful social transformation across education, skill development, and community welfare. MeetSpace.Nirmaan is our intelligent workspace management portal built to streamline institutional productivity, meetings, and cross-team coordination.
+                Discover the story of Nirmaan NGO, a nonprofit organization dedicated to creating equal opportunities in India through education, skill training, and social innovation. We empower underprivileged communities by driving impactful social change.
               </Typography>
 
               <Stack spacing={1.5}>
                 {[
-                  'Real-time conflict prevention across all meeting venues',
-                  'Automated hierarchy approvals for department managers & HR',
-                  'Full equipment and facility readiness (VC, Projector, Mic, Audio)',
+                  'Vision: To achieve a knowledge-driven and economically empowered society',
+                  'Mission: To promote grassroots social innovations and active citizenship',
+                  'Dedicated to creating equal opportunities through education & skill training',
                 ].map((item) => (
                   <Box key={item} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                     <CheckCircleIcon sx={{ color: '#059669', fontSize: 20 }} />
@@ -464,14 +496,14 @@ export default function Landing() {
                 }}
               >
                 <Typography variant="h6" sx={{ fontWeight: 800, color: DARK_BLUE, mb: 2.5, fontSize: '1.1rem' }}>
-                  Portal Highlights & Operational Stats
+                  Nirmaan Impact & Reach
                 </Typography>
                 <Grid container spacing={2}>
                   {[
-                    { value: '4+', label: 'Dedicated Meeting Suites' },
-                    { value: '100%', label: 'Conflict-Free Scheduling' },
-                    { value: '2-Stage', label: 'Automated Manager Approvals' },
-                    { value: '24/7', label: 'Real-time Portal Availability' },
+                    { value: '6+ Million', label: 'Beneficiaries Impacted' },
+                    { value: '26', label: 'States & UTs in India' },
+                    { value: '12,000+', label: 'Individual Volunteers' },
+                    { value: '250+', label: 'Corporate Champions' },
                   ].map((stat) => (
                     <Grid item xs={6} key={stat.label}>
                       <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2 }}>
@@ -508,7 +540,7 @@ export default function Landing() {
           <Box sx={{ textAlign: 'center', mb: 3.5 }}>
             <Chip label="Get in Touch" color="primary" size="small" sx={{ fontWeight: 700, mb: 1 }} />
             <Typography variant="h4" sx={{ fontWeight: 800, color: DARK_BLUE, fontSize: { xs: '1.6rem', md: '2rem' } }}>
-              Contact & Portal Support
+              Contact Us
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, maxWidth: 580, mx: 'auto' }}>
               Have questions regarding meeting room allocations, credentials, or facility maintenance? Our operations team is here to assist you.
@@ -566,7 +598,7 @@ export default function Landing() {
                   </Typography>
                 </Box>
                 <MuiLink
-                  href="https://maps.google.com/?q=Nirmaan+Organization+Hyderabad"
+                  href="https://maps.app.goo.gl/fxmYp59EqtcKVcni9"
                   target="_blank"
                   rel="noopener noreferrer"
                   sx={{
@@ -830,6 +862,20 @@ export default function Landing() {
                       www.nirmaan.org
                     </Typography>
                   </Box>
+                  <Stack direction="row" spacing={1.5} sx={{ pt: 1.5 }}>
+                    <IconButton size="small" component="a" href="#" target="_blank" sx={{ bgcolor: '#fff', width: 32, height: 32, '&:hover': { bgcolor: '#e2e8f0' } }}>
+                      <FacebookIcon sx={{ color: '#1877F2', fontSize: 20 }} />
+                    </IconButton>
+                    <IconButton size="small" component="a" href="#" target="_blank" sx={{ bgcolor: '#fff', width: 32, height: 32, '&:hover': { bgcolor: '#e2e8f0' } }}>
+                      <LinkedInIcon sx={{ color: '#0A66C2', fontSize: 20 }} />
+                    </IconButton>
+                    <IconButton size="small" component="a" href="#" target="_blank" sx={{ bgcolor: '#fff', width: 32, height: 32, '&:hover': { bgcolor: '#e2e8f0' } }}>
+                      <InstagramIcon sx={{ color: '#E1306C', fontSize: 20 }} />
+                    </IconButton>
+                    <IconButton size="small" component="a" href="#" target="_blank" sx={{ bgcolor: '#fff', width: 32, height: 32, '&:hover': { bgcolor: '#e2e8f0' } }}>
+                      <XIcon sx={{ color: '#000000', fontSize: 18 }} />
+                    </IconButton>
+                  </Stack>
                 </Stack>
               </Grid>
             </Grid>

@@ -14,7 +14,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const DEFAULT_FROM = process.env.EMAIL_FROM || '"MeetSpace Nirmaan" <no-reply@meetspace.nirmaan.com>';
+const DEFAULT_FROM = process.env.SMTP_FROM || process.env.EMAIL_FROM || 'Meetspace@nirmaan.org';
 
 /**
  * Generic send mail helper with error resilience
@@ -450,5 +450,84 @@ export const sendTestEmail = async (targetEmail) => {
     subject,
     html,
     text: 'This is a test email from MeetSpace Nirmaan Notification System.',
+  });
+};
+
+/**
+ * 7. Send submission emails to manager and room manager
+ */
+export const sendSubmissionEmails = async ({ employee, manager, roomManager, booking, room }) => {
+  const managerEmail = manager?.email;
+  
+  let roomManagerEmails = [];
+  if (Array.isArray(roomManager)) {
+    roomManagerEmails = roomManager.map(rm => rm.email).filter(Boolean);
+  } else if (roomManager?.email) {
+    roomManagerEmails = [roomManager.email];
+  }
+
+  const roomName = room?.name || 'Meeting Room';
+  const employeeName = employee?.name || 'Employee';
+  const timeSlot = `${booking?.start_time} - ${booking?.end_time}`;
+  const date = booking?.meeting_date;
+
+  const htmlBody = `
+    <h3>New Booking Request</h3>
+    <p><strong>Employee:</strong> ${employeeName} (${employee?.email || ''})</p>
+    <p><strong>Room:</strong> ${roomName}</p>
+    <p><strong>Date:</strong> ${date}</p>
+    <p><strong>Time Slot:</strong> ${timeSlot}</p>
+    <p><strong>Purpose:</strong> ${booking?.purpose || 'N/A'}</p>
+  `;
+
+  const promises = [];
+
+  if (managerEmail) {
+    promises.push(sendMail({
+      to: managerEmail,
+      subject: `[Booking Request] ${employeeName} requested ${roomName}`,
+      html: htmlBody,
+    }));
+  }
+
+  if (roomManagerEmails.length > 0) {
+    promises.push(sendMail({
+      to: roomManagerEmails,
+      subject: `[Room Alert] New booking request for ${roomName}`,
+      html: htmlBody,
+    }));
+  }
+
+  return Promise.all(promises);
+};
+
+/**
+ * 8. Send status email to employee when booking is approved/rejected
+ */
+export const sendStatusEmail = async ({ employee, booking, room, status, reason }) => {
+  const employeeEmail = employee?.email;
+  if (!employeeEmail) return;
+
+  const roomName = room?.name || 'Meeting Room';
+  const timeSlot = `${booking?.start_time} - ${booking?.end_time}`;
+  const date = booking?.meeting_date;
+  const statusUpper = status ? status.toUpperCase() : 'UPDATED';
+
+  let htmlBody = `
+    <h3>Booking Status Update: ${statusUpper}</h3>
+    <p>Your booking request has been <strong>${statusUpper}</strong>.</p>
+    <p><strong>Room:</strong> ${roomName}</p>
+    <p><strong>Date:</strong> ${date}</p>
+    <p><strong>Time Slot:</strong> ${timeSlot}</p>
+  `;
+
+  if (statusUpper === 'REJECTED' && reason) {
+    htmlBody += `<p><strong>Reason for rejection:</strong> ${reason}</p>`;
+  }
+
+  return sendMail({
+    to: employeeEmail,
+    subject: `[Booking ${statusUpper}] ${roomName} on ${date}`,
+    html: htmlBody,
   });
 };

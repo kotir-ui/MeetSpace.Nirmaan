@@ -39,6 +39,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import * as bookingApi from '../../api/booking.js';
 import { useAuth } from '../../../../context/AuthContext.jsx';
+import BookingStatusChip from '../common/BookingStatusChip.jsx';
+import { computeDynamicStatus } from '../../utils/bookingStatusHelper.js';
 
 export default function MyBookings() {
   const navigate = useNavigate();
@@ -127,13 +129,15 @@ export default function MyBookings() {
     return labels[status] || status;
   };
 
-  // Filter bookings by status & search query
+  // Filter bookings by dynamic status & search query
   const filteredBookings = bookings.filter((b) => {
+    const dynStatus = computeDynamicStatus(b);
     if (statusFilter !== 'all') {
-      if (statusFilter === 'pending' && !b.status?.startsWith('pending')) return false;
-      if (statusFilter === 'confirmed' && b.status !== 'confirmed') return false;
-      if (statusFilter === 'completed' && b.status !== 'completed') return false;
-      if (statusFilter === 'rejected_cancelled' && !['rejected', 'cancelled'].includes(b.status)) return false;
+      if (statusFilter === 'pending' && dynStatus !== 'pending') return false;
+      if (statusFilter === 'confirmed' && dynStatus !== 'confirmed') return false;
+      if (statusFilter === 'ongoing' && dynStatus !== 'ongoing') return false;
+      if (statusFilter === 'completed' && dynStatus !== 'completed') return false;
+      if (statusFilter === 'rejected_cancelled' && !['rejected', 'cancelled'].includes(dynStatus)) return false;
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
@@ -227,10 +231,10 @@ export default function MyBookings() {
             label="Confirmed"
             size="small"
             clickable
-            color={statusFilter === 'confirmed' ? 'success' : 'default'}
+            color={statusFilter === 'confirmed' ? 'primary' : 'default'}
             variant={statusFilter === 'confirmed' ? 'filled' : 'outlined'}
             onClick={() => { setStatusFilter('confirmed'); setPage(0); }}
-            sx={{ fontWeight: 700 }}
+            sx={{ fontWeight: 700, borderColor: '#93C5FD', color: statusFilter === 'confirmed' ? '#fff' : '#2563EB' }}
           />
           <Chip
             label="Pending Approval"
@@ -239,16 +243,25 @@ export default function MyBookings() {
             color={statusFilter === 'pending' ? 'warning' : 'default'}
             variant={statusFilter === 'pending' ? 'filled' : 'outlined'}
             onClick={() => { setStatusFilter('pending'); setPage(0); }}
-            sx={{ fontWeight: 700 }}
+            sx={{ fontWeight: 700, borderColor: '#FCD34D', color: statusFilter === 'pending' ? '#fff' : '#D97706' }}
+          />
+          <Chip
+            label="Ongoing"
+            size="small"
+            clickable
+            color={statusFilter === 'ongoing' ? 'warning' : 'default'}
+            variant={statusFilter === 'ongoing' ? 'filled' : 'outlined'}
+            onClick={() => { setStatusFilter('ongoing'); setPage(0); }}
+            sx={{ fontWeight: 700, borderColor: '#FDBA74', color: statusFilter === 'ongoing' ? '#fff' : '#EA580C' }}
           />
           <Chip
             label="Completed"
             size="small"
             clickable
-            color={statusFilter === 'completed' ? 'info' : 'default'}
+            color={statusFilter === 'completed' ? 'success' : 'default'}
             variant={statusFilter === 'completed' ? 'filled' : 'outlined'}
             onClick={() => { setStatusFilter('completed'); setPage(0); }}
-            sx={{ fontWeight: 700 }}
+            sx={{ fontWeight: 700, borderColor: '#86EFAC', color: statusFilter === 'completed' ? '#fff' : '#16A34A' }}
           />
           <Chip
             label="Rejected / Cancelled"
@@ -257,7 +270,7 @@ export default function MyBookings() {
             color={statusFilter === 'rejected_cancelled' ? 'error' : 'default'}
             variant={statusFilter === 'rejected_cancelled' ? 'filled' : 'outlined'}
             onClick={() => { setStatusFilter('rejected_cancelled'); setPage(0); }}
-            sx={{ fontWeight: 700 }}
+            sx={{ fontWeight: 700, borderColor: '#FCA5A5', color: statusFilter === 'rejected_cancelled' ? '#fff' : '#DC2626' }}
           />
         </Stack>
       </Paper>
@@ -333,17 +346,7 @@ export default function MyBookings() {
                           />
                         </TableCell>
                         <TableCell>
-                          <Chip
-                            label={getStatusLabel(booking.status)}
-                            size="small"
-                            sx={{
-                              bgcolor: `${getStatusColor(booking.status)}15`,
-                              color: getStatusColor(booking.status),
-                              border: `1px solid ${getStatusColor(booking.status)}40`,
-                              fontWeight: 700,
-                              fontSize: '0.75rem',
-                            }}
-                          />
+                          <BookingStatusChip booking={booking} />
                         </TableCell>
                         <TableCell sx={{ textAlign: 'center' }}>
                           <Stack direction="row" spacing={1} justifyContent="center">
@@ -492,15 +495,7 @@ export default function MyBookings() {
                   STATUS
                 </Typography>
                 <Box sx={{ mt: 0.5 }}>
-                  <Chip
-                    label={getStatusLabel(selectedBooking.status)}
-                    sx={{
-                      bgcolor: `${getStatusColor(selectedBooking.status)}15`,
-                      color: getStatusColor(selectedBooking.status),
-                      border: `1px solid ${getStatusColor(selectedBooking.status)}40`,
-                      fontWeight: 700,
-                    }}
-                  />
+                  <BookingStatusChip booking={selectedBooking} size="medium" />
                 </Box>
               </Grid>
             </Grid>
